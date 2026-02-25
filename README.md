@@ -6,7 +6,7 @@
 | Nome | RA |
 |------|----|
 | Ana Beatriz da Silva | 25007143 |
-| Arthur Grizone Silvestre de Oliveira | 00000000 |
+| Arthur Grizone Silvestre de Oliveira | 25008341 |
 | Laura Lugli Fonseca Pereira | 25000739 |
 | Lucas Rodrigues Xavier | 25000508 |
 | Maria Júlia Souza de Oliveira | 25007909 |

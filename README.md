@@ -1,8 +1,13 @@
-#   Projeto Integrador III - 2026
-## Engenharia de Software
-### Grupo 25
+# MesclaInvest
+
+O **MesclaInvest** é um aplicativo mobile que simula uma plataforma de investimento em startups do ecossistema **Mescla**, permitindo que usuários visualizem projetos, acompanhem informações e realizem **negociações simuladas de tokens** representando participações digitais.
+
+Este repositório contém o desenvolvimento do sistema proposto na disciplina.
+
 ---
-## Integrantes 👥
+
+## 👥 Integrantes
+
 | Nome | RA |
 |------|----|
 | Ana Beatriz da Silva | 25007143 |
@@ -11,3 +16,22 @@
 | Lucas Rodrigues Xavier | 25000508 |
 | Maria Júlia Souza de Oliveira | 25007909 |
 | Max Thomazini Barboza | 25003834 |
+
+---
+
+## 🛠 Tecnologias
+
+O projeto será desenvolvido utilizando:
+
+- **Flutter (Dart)** – Aplicação Mobile  
+- **Node.js (JavaScript / TypeScript)** – Backend  
+- **Firebase Firestore** – Banco de dados  
+- **Git + GitHub** – Controle de versão  
+
+---
+
+## 🎓 Disciplina
+
+**Projeto Integrador III – 2026**  
+Curso: Engenharia de Software  
+Instituição: PUC-Campinas

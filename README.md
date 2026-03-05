@@ -1,6 +1,6 @@
-# MesclaInvest
+# 📈 **MesclaInvest**
 
-O **MesclaInvest** é um aplicativo mobile que simula uma plataforma de investimento em startups do ecossistema **Mescla**, permitindo que usuários visualizem projetos, acompanhem informações e realizem **negociações simuladas de tokens** representando participações digitais.
+O MesclaInvest é um aplicativo mobile que simula uma plataforma de investimento em startups do ecossistema **Mescla**, permitindo que usuários visualizem projetos, acompanhem informações e realizem **negociações simuladas de tokens** representando participações digitais.
 
 Este repositório contém o desenvolvimento do sistema proposto na disciplina.
 

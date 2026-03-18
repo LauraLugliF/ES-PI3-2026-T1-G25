@@ -38,10 +38,12 @@ Instituição: PUC-Campinas
 
 ---
 
-## 📁 Orientações Renata
+## 📁 Pasta Orientações Renata
 
 Esta pasta reúne os materiais elaborados a partir das orientações recebidas que não envolvam programação nem alterações diretas no código.
 
-## ⚙️ Programa
+---
+
+## ⚙️ Pasta MesclaInvest
 
 Esta pasta concentra os arquivos do aplicativo, incluindo código-fonte e recursos do projeto.

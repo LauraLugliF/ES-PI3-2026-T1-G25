@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "358487499986",
+    "project_id": "pi3-time25",
+    "storage_bucket": "pi3-time25.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:358487499986:android:50ae2fe7f13223bbab390b",
+        "android_client_info": {
+          "package_name": "com.example.programa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9-iK5F_agTCg2yjn26b1qOG15xy2zvkU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

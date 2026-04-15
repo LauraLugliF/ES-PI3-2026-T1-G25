@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:programa/screens/login_screen/login_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:programa/screens/welcome_screen/welcome_screen.dart';
+import 'screens/welcome_screen/welcome_screen.dart';
+import 'screens/login_screen/login_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,10 +16,16 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'MesclaInvest',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF2DBE9D)),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF2DBE9D),
+        ),
         useMaterial3: true,
       ),
-      home: const LoginScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const WelcomeScreen(),
+        '/login': (context) => const LoginScreen(),
+      },
     );
   }
 }

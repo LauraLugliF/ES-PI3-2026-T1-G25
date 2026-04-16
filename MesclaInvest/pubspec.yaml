@@ -37,6 +37,7 @@ dependencies:
   firebase_core: any
   firebase_auth: any
   cloud_firestore: any
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:

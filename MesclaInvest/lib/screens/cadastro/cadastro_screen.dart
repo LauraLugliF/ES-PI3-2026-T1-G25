@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../models/usuario_model.dart';
 import '../../services/cadastro_auth.dart';
 import '../../widgets/cadastro_widgets.dart';
 import 'steps/nome_step.dart';
@@ -59,7 +58,9 @@ class _CadastroFlowScreenState extends State<CadastroFlowScreen> {
     }
   }
 
-  void _finalizarCadastro() async {
+  Future<void> _finalizarCadastro() async {
+    if (_isLoading) return;
+
     if (_senhaController.text != _confirmaSenhaController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -75,17 +76,17 @@ class _CadastroFlowScreenState extends State<CadastroFlowScreen> {
     try {
       final servico = CadastroAuth();
       final uid = await servico.cadastrarUsuario(
-        _emailController.text,
-        _senhaController.text,
+        email: _emailController.text.trim(),
+        senha: _senhaController.text,
+        nome: _nomeController.text.trim(),
+        cpf: _cpfController.text.trim(),
+        telefone: _telefoneController.text.trim(),
       );
-
-      setState(() => _isLoading = false);
 
       if (uid.isNotEmpty) {
         _nextPage();
       }
     } catch (e) {
-      setState(() => _isLoading = false);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -93,6 +94,10 @@ class _CadastroFlowScreenState extends State<CadastroFlowScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

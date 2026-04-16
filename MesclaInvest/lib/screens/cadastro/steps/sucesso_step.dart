@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../widgets/cadastro_widgets.dart';
+import '../../../widgets/cadastro_widgets.dart';
 
 class SucessoStep extends StatelessWidget {
   final VoidCallback onEntrar;

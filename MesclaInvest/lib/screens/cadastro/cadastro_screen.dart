@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/usuario_model.dart';
-import '../services/cadastro_auth.dart';
-import '../widgets/cadastro_widgets.dart';
+import '../../models/usuario_model.dart';
+import '../../services/cadastro_auth.dart';
+import '../../widgets/cadastro_widgets.dart';
 import 'steps/nome_step.dart';
 import 'steps/cpf_step.dart';
 import 'steps/telefone_step.dart';
@@ -73,16 +73,11 @@ class _CadastroFlowScreenState extends State<CadastroFlowScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final novoUsuario = Usuario(
-        nome: _nomeController.text,
-        cpf: _cpfController.text,
-        telefone: _telefoneController.text,
-        email: _emailController.text,
-        senha: _senhaController.text,
-      );
-
       final servico = CadastroAuth();
-      final sucesso = await servico.cadastrarUsuario(novoUsuario);
+      final sucesso = await servico.cadastrarUsuario(
+        _emailController.text,
+        _senhaController.text,
+      );
 
       setState(() => _isLoading = false);
 
@@ -163,7 +158,7 @@ class _CadastroFlowScreenState extends State<CadastroFlowScreen> {
                     isLoading: _isLoading,
                   ),
                   SucessoStep(
-                    onEntrar: () {},
+                    onEntrar: () => Navigator.of(context).pushReplacementNamed('/login'),
                   ),
                 ],
               ),

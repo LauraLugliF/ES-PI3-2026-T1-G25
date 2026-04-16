@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../widgets/cadastro_widgets.dart';
+import '../../../widgets/cadastro_widgets.dart';
 
 class NomeStep extends StatelessWidget {
   final TextEditingController nomeController;

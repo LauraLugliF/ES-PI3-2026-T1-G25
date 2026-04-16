@@ -74,14 +74,14 @@ class _CadastroFlowScreenState extends State<CadastroFlowScreen> {
 
     try {
       final servico = CadastroAuth();
-      final sucesso = await servico.cadastrarUsuario(
+      final uid = await servico.cadastrarUsuario(
         _emailController.text,
         _senhaController.text,
       );
 
       setState(() => _isLoading = false);
 
-      if (sucesso) {
+      if (uid.isNotEmpty) {
         _nextPage();
       }
     } catch (e) {

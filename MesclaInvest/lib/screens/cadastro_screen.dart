@@ -72,26 +72,29 @@ class _CadastroFlowScreenState extends State<CadastroFlowScreen> {
 
     setState(() => _isLoading = true);
 
-    final novoUsuario = Usuario(
-      nome: _nomeController.text,
-      cpf: _cpfController.text,
-      telefone: _telefoneController.text,
-      email: _emailController.text,
-      senha: _senhaController.text,
-    );
+    try {
+      final novoUsuario = Usuario(
+        nome: _nomeController.text,
+        cpf: _cpfController.text,
+        telefone: _telefoneController.text,
+        email: _emailController.text,
+        senha: _senhaController.text,
+      );
 
-    final servico = CadastroAuth();
-    final sucesso = await servico.cadastrarUsuario(novoUsuario);
+      final servico = CadastroAuth();
+      final sucesso = await servico.cadastrarUsuario(novoUsuario);
 
-    setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
 
-    if (sucesso) {
-      _nextPage();
-    } else {
+      if (sucesso) {
+        _nextPage();
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Erro ao cadastrar. Tente novamente.'),
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
           backgroundColor: Colors.red,
         ),
       );

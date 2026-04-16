@@ -204,7 +204,9 @@ class CadastroFooter extends StatelessWidget {
         const Text('Já possui conta? ',
             style: TextStyle(fontSize: 12, color: Colors.black)),
         GestureDetector(
-          onTap: () {},
+          onTap: () {
+            Navigator.of(context).pushReplacementNamed('/login');
+          },
           child: const Text('Entrar',
               style: TextStyle(
                   fontSize: 12,

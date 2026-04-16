@@ -18,7 +18,7 @@ export const addUser = onRequest(
     const cpf = request.body?.cpf;
     const email = request.body?.email;
     const telefone = request.body?.telefone;
-    
+
     // Gerando o timestamp do servidor
     const createdAt = FieldValue.serverTimestamp();
 
@@ -46,5 +46,5 @@ export const addUser = onRequest(
       logger.error("Erro ao cadastrar pessoa.", error);
       response.status(500).send("Erro interno ao cadastrar a pessoa.");
     }
-  }
+  },
 );

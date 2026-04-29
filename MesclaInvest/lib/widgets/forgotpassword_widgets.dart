@@ -189,10 +189,10 @@ class ForgotPasswordMenssage extends StatelessWidget {
 // Mostra o link para entrar em conta.
 class ForgotPasswordFotter extends StatelessWidget {
   // Ação ao tocar em login
-  final VoidCallback onCreateAccount;
+  final VoidCallback onLogin;
 
   // Cria o rodapé.
-  const ForgotPasswordFotter({super.key, required this.onCreateAccount});
+  const ForgotPasswordFotter({super.key, required this.onLogin});
 
   // Desenha o rodapé com o link de voltar para login.
   @override
@@ -206,7 +206,7 @@ class ForgotPasswordFotter extends StatelessWidget {
         // Área clicável para abrir cadastro.
         GestureDetector(
           // Executa a navegação recebida.
-          onTap: onCreateAccount,
+          onTap: onLogin,
           // Texto clicável de criação de conta.
           child: const Text(
             'Login',

@@ -101,6 +101,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               // Espaça o campo de e-mail.
               const SizedBox(height: 10),
 
+              //cria botao de acao principal
               ForgotPasswordPrimaryButton(
                 // Ativa o botão somente quando os dados parecem válidos.
                 onPressed: _canSubmit
@@ -121,6 +122,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           // Guarda a resposta do envio de email.
                           _emailMessage = message;
                         });
+
+                        // Detecta se o envio foi bem-sucedido.
+                        final isSuccess = message.toLowerCase().contains('sucesso');
+                        if (isSuccess) {
+                          // Captura o navigator antes do await.
+                          final navigator = Navigator.of(context);
+                          
+                          // Aguarda 3 segundos para o usuário ler a mensagem.
+                          await Future.delayed(const Duration(seconds: 3));
+
+                          // Evita navegar se a tela foi removida.
+                          if (!mounted) {
+                            return;
+                          }
+                          
+                          // Volta para a tela de login automaticamente.
+                          navigator.pushReplacementNamed('/login');
+                        }
                       }
                     // Desabilita o botão quando os dados estão incompletos.
                     : null,

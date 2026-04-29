@@ -1,6 +1,9 @@
 // Max Thomazini Barbosa RA: 25003934
+
 import 'package:flutter/material.dart';
 
+// Importa para usar Future.delayed (atraso).
+import 'dart:async';
 // Importa a função que envia email de resetar senha.
 import '../../services/forgotpassword_auth.dart';
 // Importa os widgets reutilizáveis da tela de esqueceu senha.

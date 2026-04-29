@@ -1,213 +1,189 @@
+// Max Thomazini Barbosa RA:25003934
+
+// Indica que este state pertence ao arquivo login_screen.dart.
 part of 'login_screen.dart';
 
+// Controla os dados e a lógica da tela de login.
 class _LoginScreenState extends State<LoginScreen> {
+  // Guarda o texto digitado no campo de e-mail.
   final _emailController = TextEditingController();
+  // Guarda o texto digitado no campo de senha.
   final _passwordController = TextEditingController();
+  // Guarda a mensagem exibida após tentar entrar.
   String? _loginMessage;
 
+  // Diz se o botão pode ser usado.
   bool get _canSubmit {
+    // Remove espaços em branco do e-mail.
     final email = _emailController.text.trim();
+    // Lê a senha sem alterar o texto.
     final password = _passwordController.text;
+    // Libera o envio quando o e-mail parece válido e a senha não está vazia.
     return email.contains('@') && password.isNotEmpty;
   }
 
+  // Executa quando o state é criado.
   @override
   void initState() {
+    // Inicializa o comportamento padrão do Flutter.
     super.initState();
+    // Escuta mudanças no e-mail para limpar mensagens antigas.
     _emailController.addListener(_onInputChanged);
+    // Escuta mudanças na senha para limpar mensagens antigas.
     _passwordController.addListener(_onInputChanged);
   }
 
+  // Executa quando a tela vai ser descartada.
   @override
   void dispose() {
+    // Remove o listener do e-mail e libera o controlador.
     _emailController
       ..removeListener(_onInputChanged)
       ..dispose();
+    // Remove o listener da senha e libera o controlador.
     _passwordController
       ..removeListener(_onInputChanged)
       ..dispose();
+    // Finaliza o ciclo do state.
     super.dispose();
   }
 
+  // Limpa a mensagem mostrada na tela quando o usuário edita os campos.
   void _onInputChanged() {
+    // Evita chamar setState se a tela já foi desmontada.
     if (!mounted) {
       return;
     }
+    // Atualiza a interface para remover a mensagem anterior.
     setState(() {
+      // Zera a mensagem de retorno.
       _loginMessage = null;
     });
   }
 
-  Widget _buildLoginMessage() {
-    final message = _loginMessage;
-    if (message == null || message.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final isSuccess = message.toLowerCase().contains('sucesso');
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: Text(
-        message,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: isSuccess ? const Color(0xFF1B8E2D) : Colors.red,
-          fontSize: 13,
-        ),
-      ),
-    );
-  }
-
+  // Monta a interface visual da tela.
   @override
   Widget build(BuildContext context) {
+    // Lê o espaço ocupado pelo teclado na tela.
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
+    // Cria a estrutura principal da página.
     return Scaffold(
+      // Define o fundo branco da tela.
       backgroundColor: Colors.white,
+      // Fecha o teclado quando o usuário toca fora dos campos.
       body: GestureDetector(
+        // Remove o foco do campo atual.
         onTap: () => FocusScope.of(context).unfocus(),
+        // Faz o detector capturar toques transparentes.
         behavior: HitTestBehavior.translucent,
+        // Garante que o conteúdo respeite áreas seguras do aparelho.
         child: SafeArea(
+          // Permite rolar a tela quando o teclado aparece.
           child: SingleChildScrollView(
+            // Fecha o teclado enquanto o usuário arrasta a tela.
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            // Adiciona espaçamento lateral e inferior.
             padding: EdgeInsets.fromLTRB(24, 0, 24, bottomInset + 20),
+            // Organiza os elementos em coluna.
             child: Column(
+              // Deixa a coluna do tamanho do conteúdo.
               mainAxisSize: MainAxisSize.min,
               children: [
+              // Cria espaço no topo.
               const SizedBox(height: 40),
 
-              // Logo
-              Image.asset(
-                'lib/screens/assets/Logo1.png',
-                height: 120,
-              ),
+              // Mostra o logo do app.
+              const LoginLogo(),
 
+              // Separa o logo do título.
               const SizedBox(height: 20),
 
-              // Título
-              const Text(
-                'Login',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              // Exibe o título e o subtítulo.
+              const LoginHeader(),
 
-              const SizedBox(height: 8),
-
-              const Text(
-                'Entre com sua conta MesclaInvest',
-                style: TextStyle(color: Colors.grey),
-              ),
-
+              // Separa o cabeçalho do campo de e-mail.
               const SizedBox(height: 30),
 
-              // Campo Email
-              TextField(
+              // Campo onde o usuário digita o e-mail.
+              LoginTextField(
+                // Conecta o campo ao controlador do e-mail.
                 controller: _emailController,
-                onTapOutside: (_) => FocusScope.of(context).unfocus(),
-                decoration: InputDecoration(
-                  hintText: 'Digite seu e-mail',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
+                // Texto de dica do campo.
+                hint: 'Digite seu e-mail',
               ),
 
+              // Espaça o campo de e-mail do campo de senha.
               const SizedBox(height: 15),
 
-              // Campo Senha
-              TextField(
+              // Campo onde o usuário digita a senha.
+              LoginTextField(
+                // Conecta o campo ao controlador da senha.
                 controller: _passwordController,
-                obscureText: true,
-                onTapOutside: (_) => FocusScope.of(context).unfocus(),
-                decoration: InputDecoration(
-                  hintText: 'Senha',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
+                // Texto de dica do campo.
+                hint: 'Senha',
+                // Oculta os caracteres da senha.
+                isPassword: true,
               ),
 
+              // Espaça os campos do link de recuperação.
               const SizedBox(height: 10),
 
-              // Esqueceu senha
-              Align(
-                alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  onTap: () {
-                    // ação futura
-                  },
-                  child: const Text(
-                    'Esqueceu a senha?',
-                    style: TextStyle(
-                      color: Color(0xFF2DBE9D),
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
+              // Link para recuperar senha.
+              LoginForgotPasswordLink(
+                // Define a ação quando o usuário tocar no link.
+                onTap: () {
+                  // Ação futura para recuperação de senha.
+                },
               ),
 
+              // Espaça o link do botão de entrar.
               const SizedBox(height: 20),
 
-              // Botão Entrar
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _canSubmit
-                      ? () async {
-                          final message = await submitLogin(
-                            _emailController.text,
-                            _passwordController.text,
-                          );
+              // Botão principal para executar o login.
+              LoginPrimaryButton(
+                // Ativa o botão somente quando os dados parecem válidos.
+                onPressed: _canSubmit
+                    ? () async {
+                        // Envia o e-mail e a senha para a função de login.
+                        final message = await submitLogin(
+                          // Passa o texto atual do e-mail.
+                          _emailController.text,
+                          // Passa o texto atual da senha.
+                          _passwordController.text,
+                        );
 
-                          if (!mounted) {
-                            return;
-                          }
-
-                          setState(() {
-                            _loginMessage = message;
-                          });
+                        // Evita atualizar a tela se ela já foi removida.
+                        if (!mounted) {
+                          return;
                         }
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2DBE9D),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text(
-                    'Entrar',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
+
+                        // Atualiza a mensagem exibida abaixo do botão.
+                        setState(() {
+                          // Guarda a resposta do login.
+                          _loginMessage = message;
+                        });
+                      }
+                    // Desabilita o botão quando os dados estão incompletos.
+                    : null,
               ),
 
-              _buildLoginMessage(),
+              // Mostra a mensagem de sucesso ou erro do login.
+              LoginMessage(message: _loginMessage),
 
+              // Espaça a mensagem do rodapé.
               const SizedBox(height: 32),
 
-              // Criar conta
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Não possui conta? '),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacementNamed(context, '/register');
-                    },
-                    child: const Text(
-                      'Criar Conta',
-                      style: TextStyle(
-                        color: Color(0xFF2DBE9D),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+              // Mostra o link para criar uma conta.
+              LoginFooter(
+                // Navega para a tela de cadastro.
+                onCreateAccount: () {
+                  // Substitui a tela atual pela tela de cadastro.
+                  Navigator.pushReplacementNamed(context, '/register');
+                },
               ),
 
+              // Espaço inferior final.
               const SizedBox(height: 20),
               ],
             ),

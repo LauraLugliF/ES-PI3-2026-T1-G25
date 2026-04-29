@@ -133,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
               LoginForgotPasswordLink(
                 // Define a ação quando o usuário tocar no link.
                 onTap: () {
-                  // Ação futura para recuperação de senha.
+                  Navigator.pushReplacementNamed(context, '/forgotpassword');
                 },
               ),
 

@@ -1,26 +1,23 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../models/usuario_model.dart';
+import '../repositories/usuario_repository.dart';
 
 class CadastroAuth {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final UsuarioRepository _usuarioRepository = UsuarioRepository();
 
-  Future<String> cadastrarUsuario(String email, String senha) async {
+  Future<String> cadastrarUsuario(Usuario usuario) async {
     try {
       print('--- Iniciando Cadastro ---');
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: senha,
+        email: usuario.email,
+        password: usuario.senha,
       );
       final uid = userCredential.user!.uid;
       print('Usuário criado com sucesso! UID: $uid');
 
-      // Salvar documento no Firestore com o mesmo UID
-      await _firestore.collection('users').doc(uid).set({
-        'email': email,
-        'uid': uid,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      await _usuarioRepository.salvarUsuario(usuario: usuario, uid: uid);
       print('Documento salvo no Firestore com UID: $uid');
 
       return uid;

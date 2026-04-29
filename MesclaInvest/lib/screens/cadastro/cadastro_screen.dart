@@ -74,10 +74,14 @@ class _CadastroFlowScreenState extends State<CadastroFlowScreen> {
 
     try {
       final servico = CadastroAuth();
-      final uid = await servico.cadastrarUsuario(
-        _emailController.text,
-        _senhaController.text,
+      final usuario = Usuario(
+        nome: _nomeController.text.trim(),
+        cpf: _cpfController.text.trim(),
+        telefone: _telefoneController.text.trim(),
+        email: _emailController.text.trim(),
+        senha: _senhaController.text,
       );
+      final uid = await servico.cadastrarUsuario(usuario);
 
       setState(() => _isLoading = false);
 

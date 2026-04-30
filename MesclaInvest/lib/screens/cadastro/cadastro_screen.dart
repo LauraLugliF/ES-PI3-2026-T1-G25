@@ -155,15 +155,14 @@ class _CadastroFlowScreenState extends State<CadastroFlowScreen> {
     try {
       // Chama aquele "motor" de banco de dados que a gente fez no outro arquivo
       final servico = CadastroAuth();
-      
-      // Manda o motor tentar criar a conta usando as informações de todas as caixinhas
-      final uid = await servico.cadastrarUsuario(
-        email: _emailController.text.trim(),
-        senha: _senhaController.text,
+      final usuario = Usuario(
         nome: _nomeController.text.trim(),
         cpf: _cpfController.text.trim(),
         telefone: _telefoneController.text.trim(),
+        email: _emailController.text.trim(),
+        senha: _senhaController.text,
       );
+      final uid = await servico.cadastrarUsuario(usuario);
 
       // Se o motor devolveu aquele código de sucesso (uid não tá vazio), a gente vai pra tela final!
       if (uid.isNotEmpty) {

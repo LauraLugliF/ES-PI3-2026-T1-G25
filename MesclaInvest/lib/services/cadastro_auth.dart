@@ -5,50 +5,28 @@ import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 
+import '../models/usuario_model.dart';
+import '../repositories/usuario_repository.dart';
+
 // Criamos uma classe (um pacote de funções) só para lidar com o cadastro
 class CadastroAuth {
   // Preparamos a ferramenta de criar login (com email e senha)
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final UsuarioRepository _usuarioRepository = UsuarioRepository();
 
-  // Endereço da "função na nuvem" que salva os dados lá no banco de dados
-  static final Uri _addUserUri =
-      Uri.parse('https://adduser-f3iojzfwzq-rj.a.run.app');
-
-  // Essa é a função principal que a tela de senha chama quando apertamos "Criar conta"
-  Future<String> cadastrarUsuario({
-    required String email,
-    required String senha,
-    required String nome,
-    required String cpf,
-    required String telefone,
-  }) async {
+  Future<String> cadastrarUsuario(Usuario usuario) async {
     try {
       // Pede pro Google/Firebase: "Cria uma conta aí com esse email e essa senha"
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email, // Usa o e-mail digitado
-        password: senha, // Usa a senha digitada
+        email: usuario.email,
+        password: usuario.senha,
       );
       
       // Pega a "identidade única" (um código cheio de letras) que o Firebase deu pra essa nova pessoa
       final uid = userCredential.user!.uid;
 
-      // Chama a nossa função na nuvem para guardar o resto das informações no banco
-      final response = await http.post(
-        _addUserUri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'uid': uid,
-          'nome': nome,
-          'cpf': cpf,
-          'email': email,
-          'telefone': telefone,
-        }),
-      );
-
-      // Verifica se a função deu algum erro
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw Exception('Não foi possível salvar os dados do usuário.');
-      }
+      await _usuarioRepository.salvarUsuario(usuario: usuario, uid: uid);
+      print('Documento salvo no Firestore com UID: $uid');
 
       // Devolve o código da pessoa pra quem chamou essa função saber que deu tudo certo
       return uid;

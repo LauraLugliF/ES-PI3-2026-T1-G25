@@ -50,3 +50,5 @@ app.*.map.json
 *.so
 MesclaInvest/build/
 MesclaInvest/android/build/
+
+.vscode/

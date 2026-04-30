@@ -13,13 +13,18 @@ class Usuario {
     required this.senha,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
+  Map<String, dynamic> toMap({bool incluirSenha = false}) {
+    final data = {
       'nome': nome,
       'cpf': cpf,
       'telefone': telefone,
       'email': email,
-      'senha': senha,
     };
+
+    if (incluirSenha) {
+      data['senha'] = senha;
+    }
+
+    return data;
   }
 }

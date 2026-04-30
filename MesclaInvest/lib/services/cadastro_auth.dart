@@ -1,23 +1,28 @@
 // LUCAS RODRIGUES XAVIER - 25000508
 // Aqui é o "motor" do cadastro, onde a gente realmente cria a conta no banco de dados do Google (Firebase).
 
-// Trazendo as ferramentas do Firebase que vamos precisar
+import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
 
 // Criamos uma classe (um pacote de funções) só para lidar com o cadastro
 class CadastroAuth {
   // Preparamos a ferramenta de criar login (com email e senha)
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  // Preparamos a ferramenta de salvar informações extras (como nome, telefone) no banco de dados
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // Endereço da "função na nuvem" que salva os dados lá no banco de dados
+  static final Uri _addUserUri =
+      Uri.parse('https://adduser-f3iojzfwzq-rj.a.run.app');
 
   // Essa é a função principal que a tela de senha chama quando apertamos "Criar conta"
-  Future<String> cadastrarUsuario(String email, String senha) async {
+  Future<String> cadastrarUsuario({
+    required String email,
+    required String senha,
+    required String nome,
+    required String cpf,
+    required String telefone,
+  }) async {
     try {
-      // Avisa no console do programador que começou
-      print('--- Iniciando Cadastro ---');
-      
       // Pede pro Google/Firebase: "Cria uma conta aí com esse email e essa senha"
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email, // Usa o e-mail digitado
@@ -26,35 +31,36 @@ class CadastroAuth {
       
       // Pega a "identidade única" (um código cheio de letras) que o Firebase deu pra essa nova pessoa
       final uid = userCredential.user!.uid;
-      
-      // Avisa que deu certo a primeira parte
-      print('Usuário criado com sucesso! UID: $uid');
 
-      // Agora, vamos guardar as informações dessa pessoa numa pasta chamada 'users'
-      // E o nome do arquivo (documento) vai ser aquela mesma identidade única (uid)
-      await _firestore.collection('users').doc(uid).set({
-        'email': email, // Salva o e-mail no arquivo dela
-        'uid': uid, // Salva o código dela também
-        'createdAt': FieldValue.serverTimestamp(), // Salva a hora exata que a conta foi criada
-      });
-      
-      // Avisa que salvou os dados
-      print('Documento salvo no Firestore com UID: $uid');
+      // Chama a nossa função na nuvem para guardar o resto das informações no banco
+      final response = await http.post(
+        _addUserUri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'uid': uid,
+          'nome': nome,
+          'cpf': cpf,
+          'email': email,
+          'telefone': telefone,
+        }),
+      );
+
+      // Verifica se a função deu algum erro
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('Não foi possível salvar os dados do usuário.');
+      }
 
       // Devolve o código da pessoa pra quem chamou essa função saber que deu tudo certo
       return uid;
       
     } on FirebaseAuthException catch (e) {
-      // Se der um erro específico do Firebase (tipo email já existe, senha fraca...)
-      print('Erro Firebase Auth [${e.code}]: ${e.message}');
-      // Pega o erro estranho e transforma numa mensagem que o usuário entenda (usando a função lá embaixo)
+      // Se der um erro específico do Firebase (tipo email já existe, senha fraca...),
+      // transforma o erro numa mensagem que o usuário entenda (usando a função lá embaixo)
       throw Exception(_handleAuthError(e.code));
       
     } catch (e) {
-      // Se der qualquer outro tipo de erro (tipo falta de internet)
-      print('Erro: $e');
-      // Avisa que deu ruim
-      throw Exception('Erro ao criar usuário.');
+      // Avisa que deu ruim removendo o termo 'Exception:' pra ficar mais bonito na tela
+      throw Exception(e.toString().replaceFirst('Exception: ', ''));
     }
   }
 

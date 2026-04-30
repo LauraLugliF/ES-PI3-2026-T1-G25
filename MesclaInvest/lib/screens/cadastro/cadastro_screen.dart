@@ -4,7 +4,6 @@
 // as telinhas menores (nome, cpf, email...) sem a gente precisar abrir uma tela nova de verdade.
 
 import 'package:flutter/material.dart';
-import '../../models/usuario_model.dart';
 import '../../services/cadastro_auth.dart';
 import '../../widgets/cadastro_widgets.dart';
 import 'steps/nome_step.dart';
@@ -76,7 +75,10 @@ class _CadastroFlowScreenState extends State<CadastroFlowScreen> {
   }
 
   // Essa função só é chamada lá no final, quando a pessoa já digitou a senha e quer criar a conta
-  void _finalizarCadastro() async {
+  Future<void> _finalizarCadastro() async {
+    // Se a rodinha de carregar já estiver ligada, não faz nada para evitar que a pessoa clique 2 vezes
+    if (_isLoading) return;
+
     // Primeiro de tudo, olha nas duas caixinhas de senha pra ver se a pessoa digitou igual
     if (_senhaController.text != _confirmaSenhaController.text) {
       // Se tiver diferente, mostra um aviso vermelho embaixo dizendo que as senhas não batem
@@ -96,22 +98,20 @@ class _CadastroFlowScreenState extends State<CadastroFlowScreen> {
       // Chama aquele "motor" de banco de dados que a gente fez no outro arquivo
       final servico = CadastroAuth();
       
-      // Manda o motor tentar criar a conta usando o email e a senha digitados
+      // Manda o motor tentar criar a conta usando as informações de todas as caixinhas
       final uid = await servico.cadastrarUsuario(
-        _emailController.text,
-        _senhaController.text,
+        email: _emailController.text.trim(),
+        senha: _senhaController.text,
+        nome: _nomeController.text.trim(),
+        cpf: _cpfController.text.trim(),
+        telefone: _telefoneController.text.trim(),
       );
-
-      // Desliga a rodinha de carregar porque já terminou
-      setState(() => _isLoading = false);
 
       // Se o motor devolveu aquele código de sucesso (uid não tá vazio), a gente vai pra tela final!
       if (uid.isNotEmpty) {
         _nextPage();
       }
     } catch (e) {
-      // Se deu algum erro no meio do caminho (internet caiu, email já existe...)
-      setState(() => _isLoading = false); // Desliga a rodinha
       if (!mounted) return;
       
       // Mostra o erro num aviso vermelho na parte de baixo da tela
@@ -121,6 +121,11 @@ class _CadastroFlowScreenState extends State<CadastroFlowScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      // Independentemente de dar certo ou errado, desliga a rodinha de carregar no final
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

@@ -63,6 +63,49 @@ class _CadastroFlowScreenState extends State<CadastroFlowScreen> {
     }
   }
 
+  // Essa função checa as regras de cada tela ANTES de deixar a pessoa avançar
+  void _handleNext() {
+    if (_currentPage == 0) {
+      // Tela de Nome
+      if (_nomeController.text.trim().isEmpty) {
+        _mostrarErro('Por favor, digite seu nome.');
+        return;
+      }
+    } else if (_currentPage == 1) {
+      // Tela de CPF (O tamanho da máscara é 14: 000.000.000-00)
+      if (_cpfController.text.trim().length < 14) {
+        _mostrarErro('Por favor, digite um CPF válido.');
+        return;
+      }
+    } else if (_currentPage == 2) {
+      // Tela de Telefone (O tamanho da máscara é 15: (00) 00000-0000)
+      if (_telefoneController.text.trim().length < 15) {
+        _mostrarErro('Por favor, digite um telefone válido.');
+        return;
+      }
+    } else if (_currentPage == 3) {
+      // Tela de E-mail
+      final regraEmail = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+      if (!regraEmail.hasMatch(_emailController.text.trim())) {
+        _mostrarErro('Por favor, digite um e-mail válido.');
+        return;
+      }
+    }
+    
+    // Se passou por todas as regras da tela atual, pode ir pra próxima!
+    _nextPage();
+  }
+
+  // Funçãozinha pra mostrar os avisos vermelhos na tela e economizar código
+  void _mostrarErro(String mensagem) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(mensagem),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
   // Função que faz a telinha deslizar pro outro lado (pra trás)
   void _previousPage() {
     // Só volta se não estiver na primeira tela (tela 0)
@@ -91,7 +134,22 @@ class _CadastroFlowScreenState extends State<CadastroFlowScreen> {
       return; // Para a função por aqui, não faz mais nada.
     }
 
-    // Se as senhas tão certas, liga a rodinha de carregar
+    // Regra da senha: Tem que ter pelo menos 8 letras/números, 1 letra maiúscula e 1 número
+    // Esse código estranho (RegExp) é só um testador de texto que o Flutter usa pra checar essas regras
+    final regraSenha = RegExp(r'^(?=.*[A-Z])(?=.*\d).{8,}$');
+    
+    // Verifica se a senha que a pessoa digitou passa no teste da regra
+    if (!regraSenha.hasMatch(_senhaController.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('A senha precisa ter pelo menos 8 caracteres, uma letra maiúscula e um número.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return; // Para tudo e não deixa salvar
+    }
+
+    // Se as senhas tão certas e passaram na regra, liga a rodinha de carregar
     setState(() => _isLoading = true); 
 
     try {
@@ -169,22 +227,22 @@ class _CadastroFlowScreenState extends State<CadastroFlowScreen> {
                 children: [
                   NomeStep(
                     nomeController: _nomeController, // Passa a caixinha de nome
-                    onNext: _nextPage, // Passa o controle de avançar
+                    onNext: _handleNext, // Agora ele passa pelo nosso verificador antes de ir pra frente
                     currentPage: _currentPage,
                   ),
                   CpfStep(
                     cpfController: _cpfController,
-                    onNext: _nextPage,
+                    onNext: _handleNext,
                     currentPage: _currentPage,
                   ),
                   TelefoneStep(
                     telefoneController: _telefoneController,
-                    onNext: _nextPage,
+                    onNext: _handleNext,
                     currentPage: _currentPage,
                   ),
                   EmailStep(
                     emailController: _emailController,
-                    onNext: _nextPage,
+                    onNext: _handleNext,
                     currentPage: _currentPage,
                   ),
                   SenhaStep(

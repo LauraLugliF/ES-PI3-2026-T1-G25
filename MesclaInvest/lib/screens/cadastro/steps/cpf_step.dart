@@ -2,6 +2,7 @@
 // Aqui é a tela onde perguntamos o CPF do usuário durante o cadastro.
 
 import 'package:flutter/material.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart'; // Pacote que adiciona a máscara
 import '../../../widgets/cadastro_widgets.dart';
 
 class CpfStep extends StatelessWidget {
@@ -21,6 +22,13 @@ class CpfStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Criando a regra de formatação (máscara) para o CPF ficar no padrão 000.000.000-00.
+    // Estamos usando uma dependência do Flutter que permite isso chamada: mask_text_input_formatter
+    var cpfMaskFormatter = MaskTextInputFormatter(
+      mask: '###.###.###-##', 
+      filter: { "#": RegExp(r'[0-9]') }, // Só aceita números no lugar do "jogo da velha"
+    );
+
     // Aqui estamos montando o visual da tela usando um molde padrão que criamos
     return CadastroPageTemplate(
       title: "Para sua segurança\nqual o seu CPF?",
@@ -32,6 +40,8 @@ class CpfStep extends StatelessWidget {
         label: "CPF",
         hint: "000.000.000-00",
         controller: cpfController, // Liga o espaço de digitar à nossa "caixinha" que guarda o texto
+        inputFormatters: [cpfMaskFormatter], // Aplica a formatação automática que criamos ali em cima
+        keyboardType: TextInputType.number, // Faz o teclado do celular abrir só com números
       ),
     );
   }

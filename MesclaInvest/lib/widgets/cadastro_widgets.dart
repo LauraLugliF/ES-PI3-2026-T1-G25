@@ -3,6 +3,7 @@
 // garantindo um padrão de design (cores, botões, campos de texto) consistente.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 // ==========================================
 // CORES DA MARCA (constantes compartilhadas)
@@ -66,11 +67,16 @@ class CadastroHeader extends StatelessWidget {
 // ==========================================
 // TEXT FIELD CUSTOMIZADO
 // ==========================================
+
 class CadastroTextField extends StatelessWidget {
   final String label;
   final String hint;
   final bool isPassword;
   final TextEditingController? controller;
+  // Nova variável para aceitar máscaras de texto (formatação automática)
+  final List<TextInputFormatter>? inputFormatters;
+  // Nova variável para definir o tipo de teclado (números, e-mail, etc)
+  final TextInputType? keyboardType;
 
   const CadastroTextField({
     super.key,
@@ -78,6 +84,8 @@ class CadastroTextField extends StatelessWidget {
     required this.hint,
     this.isPassword = false,
     this.controller,
+    this.inputFormatters,
+    this.keyboardType,
   });
 
   @override
@@ -94,6 +102,8 @@ class CadastroTextField extends StatelessWidget {
         TextField(
           controller: controller,
           obscureText: isPassword,
+          inputFormatters: inputFormatters, // Adiciona a máscara ao campo
+          keyboardType: keyboardType, // Muda o teclado no celular
           decoration: InputDecoration(
             hintText: hint,
             hintStyle:

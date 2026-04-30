@@ -32,6 +32,7 @@ class EmailStep extends StatelessWidget {
         label: "E-mail",
         hint: "Digite seu e-mail",
         controller: emailController, // Salva o que foi digitado aqui
+        keyboardType: TextInputType.emailAddress, // Mostra o teclado próprio para e-mail (com o botão de "@")
       ),
     );
   }

@@ -1,7 +1,11 @@
+// LUCAS RODRIGUES XAVIER - 25000508
+// Esta é a tela de comemoração que aparece só se o cadastro deu tudo certo!
+
 import 'package:flutter/material.dart';
 import '../../../widgets/cadastro_widgets.dart';
 
 class SucessoStep extends StatelessWidget {
+  // O que fazer quando apertar o botão de "Entrar" (vai pra tela de login)
   final VoidCallback onEntrar;
 
   const SucessoStep({
@@ -11,6 +15,7 @@ class SucessoStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Essa tela é diferente das outras, então a gente desenhou ela do zero aqui
     return LayoutBuilder(builder: (context, constraints) {
       return SingleChildScrollView(
         child: ConstrainedBox(
@@ -37,6 +42,7 @@ class SucessoStep extends StatelessWidget {
                     style: TextStyle(fontSize: 12, color: kGreyText),
                   ),
                   const SizedBox(height: 16),
+                  // Botão verde gigante pra pessoa ir fazer login
                   CadastroButton(text: "Entrar", onPressed: onEntrar),
                   const Spacer(),
                 ],

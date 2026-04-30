@@ -1,3 +1,7 @@
+// LUCAS RODRIGUES XAVIER - 25000508
+// Conjunto de componentes visuais reutilizáveis (widgets) criados especificamente para as telas de cadastro,
+// garantindo um padrão de design (cores, botões, campos de texto) consistente.
+
 import 'package:flutter/material.dart';
 
 // ==========================================

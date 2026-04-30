@@ -56,8 +56,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     //cria estrutura principal do site
     return Scaffold(
-      //define cor de fundo para branco.
-      backgroundColor: Colors.white,
       // Fecha o teclado quando o usuário toca fora dos campos.
       body: GestureDetector(
         //remove foco do campo atual.

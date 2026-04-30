@@ -69,8 +69,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // Cria a estrutura principal da página.
     return Scaffold(
-      // Define o fundo branco da tela.
-      backgroundColor: Colors.white,
       // Fecha o teclado quando o usuário toca fora dos campos.
       body: GestureDetector(
         // Remove o foco do campo atual.

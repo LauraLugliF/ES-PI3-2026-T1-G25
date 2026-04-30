@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import '../../services/cadastro_auth.dart';
 import '../../widgets/cadastro_widgets.dart';
+import '../../models/usuario_model.dart';
 import 'steps/nome_step.dart';
 import 'steps/cpf_step.dart';
 import 'steps/telefone_step.dart';

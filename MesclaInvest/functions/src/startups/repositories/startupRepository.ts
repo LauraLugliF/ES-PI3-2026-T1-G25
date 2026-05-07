@@ -1,6 +1,6 @@
-import { FieldValue } from "firebase-admin/firestore";
-import { StartupDocument } from "../types";
-import { db } from "../shared/firebase";
+import {FieldValue} from "firebase-admin/firestore";
+import {StartupDocument} from "../types";
+import {db} from "../shared/firebase";
 
 // Reutiliza a collection de startups do Firestore em toda a rotina de seed.
 const startupsCollection = db.collection("startups");
@@ -32,7 +32,7 @@ const demoStartups: Array<StartupDocument & { id: string }> = [
         equityPercent: 37,
         bio: "Responsavel por hardware e integracao mobile.",
       },
-      { name: "Mescla Labs", role: "Reserva estrategica", equityPercent: 15 },
+      {name: "Mescla Labs", role: "Reserva estrategica", equityPercent: 15},
     ],
     externalMembers: [
       {
@@ -60,13 +60,13 @@ const demoStartups: Array<StartupDocument & { id: string }> = [
     totalTokensIssued: 250000,
     currentTokenPriceCents: 310,
     founders: [
-      { name: "Beatriz Santos", role: "CEO", equityPercent: 42 },
-      { name: "Rafael Almeida", role: "COO", equityPercent: 28 },
-      { name: "Carla Nogueira", role: "CTO", equityPercent: 20 },
-      { name: "Reserva de incentivos", role: "Pool", equityPercent: 10 },
+      {name: "Beatriz Santos", role: "CEO", equityPercent: 42},
+      {name: "Rafael Almeida", role: "COO", equityPercent: 28},
+      {name: "Carla Nogueira", role: "CTO", equityPercent: 20},
+      {name: "Reserva de incentivos", role: "Pool", equityPercent: 10},
     ],
     externalMembers: [
-      { name: "Marcos Lima", role: "Conselheiro", organization: "Mescla" },
+      {name: "Marcos Lima", role: "Conselheiro", organization: "Mescla"},
       {
         name: "Patricia Gomes",
         role: "Mentora",
@@ -93,9 +93,9 @@ const demoStartups: Array<StartupDocument & { id: string }> = [
     totalTokensIssued: 500000,
     currentTokenPriceCents: 525,
     founders: [
-      { name: "Diego Martins", role: "CEO", equityPercent: 36 },
-      { name: "Juliana Vieira", role: "CPO", equityPercent: 24 },
-      { name: "Felipe Andrade", role: "CTO", equityPercent: 25 },
+      {name: "Diego Martins", role: "CEO", equityPercent: 36},
+      {name: "Juliana Vieira", role: "CPO", equityPercent: 24},
+      {name: "Felipe Andrade", role: "CTO", equityPercent: 25},
       {
         name: "Investidores simulados",
         role: "Participacao externa",
@@ -123,7 +123,7 @@ export async function seedDemoStartups(): Promise<string[]> {
 
   for (const startup of demoStartups) {
     // Separa o ID do restante dos dados para manter o identificador fora do documento salvo.
-    const { id, ...data } = startup;
+    const {id, ...data} = startup;
     const startupRef = startupsCollection.doc(id);
 
     // Escreve os campos e atualiza timestamps de criação e edição no mesmo commit.
@@ -134,7 +134,7 @@ export async function seedDemoStartups(): Promise<string[]> {
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       },
-      { merge: true }
+      {merge: true},
     );
   }
 

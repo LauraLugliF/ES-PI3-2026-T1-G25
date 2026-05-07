@@ -1,4 +1,4 @@
-//Max Thomazini Barbosa RA:25003934
+// Max Thomazini Barbosa RA:25003934
 export function normalizeString(value: unknown): string | undefined {
   // Rejeita qualquer valor que não seja texto.
   if (typeof value !== "string") {

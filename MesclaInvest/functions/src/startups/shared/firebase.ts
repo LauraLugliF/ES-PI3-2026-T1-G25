@@ -1,4 +1,4 @@
-//Max Thomazini Barbosa RA:25003934
+// Max Thomazini Barbosa RA:25003934
 import {getAuth} from "firebase-admin/auth";
 import {getApps, initializeApp} from "firebase-admin/app";
 import {getFirestore} from "firebase-admin/firestore";

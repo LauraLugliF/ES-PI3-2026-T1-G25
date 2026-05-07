@@ -12,7 +12,7 @@ export const seedStartupCatalog = onCall(async (request) => {
     if (!process.env.SEED_STARTUP_CATALOG_KEY || seedKey !== process.env.SEED_STARTUP_CATALOG_KEY) {
       throw new HttpsError(
         "permission-denied",
-        "Seed bloqueado fora do emulator sem seedKey valido."
+        "Seed bloqueado fora do emulator sem seedKey valido.",
       );
     }
   }

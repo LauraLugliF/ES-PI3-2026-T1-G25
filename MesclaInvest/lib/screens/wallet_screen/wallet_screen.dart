@@ -1,4 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+import '../../repositories/exchange_repository.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -9,18 +12,21 @@ class WalletScreen extends StatefulWidget {
 
 class _WalletScreenState extends State<WalletScreen> {
   late Future<double> _balanceFuture;
+  final _exchangeRepository = ExchangeRepository();
 
   @override
   void initState() {
     super.initState();
-    // Placeholder: simulate fetching user balance asynchronously.
     _balanceFuture = _fetchBalance();
   }
 
   Future<double> _fetchBalance() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    // TODO: replace with real fetch from user repository/auth service
-    return 1234.56;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception('Usuário não autenticado.');
+    }
+
+    return _exchangeRepository.obterSaldo(user.uid);
   }
 
   void _onNavTap(int index) {

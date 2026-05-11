@@ -4,6 +4,7 @@ class Usuario {
   String telefone;
   String email;
   String senha;
+  int saldo; // Saldo em centavos
 
   Usuario({
     required this.nome,
@@ -11,6 +12,7 @@ class Usuario {
     required this.telefone,
     required this.email,
     required this.senha,
+    this.saldo = 0,
   });
 
   Map<String, dynamic> toMap({bool incluirSenha = false}) {
@@ -19,6 +21,7 @@ class Usuario {
       'cpf': cpf,
       'telefone': telefone,
       'email': email,
+      'saldo': saldo,
     };
 
     if (incluirSenha) {

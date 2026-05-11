@@ -44,13 +44,14 @@ const db = (0, firestore_1.getFirestore)(app, "projeto3");
 // Renomeado para fazer sentido com o objetivo
 const colPessoas = db.collection("users");
 exports.addUser = (0, https_1.onRequest)({ region: "southamerica-east1", invoker: "public" }, async (request, response) => {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d, _e, _f, _g;
     // Coletando os dados da pessoa
     const uid = (_a = request.body) === null || _a === void 0 ? void 0 : _a.uid;
     const nome = (_b = request.body) === null || _b === void 0 ? void 0 : _b.nome;
     const cpf = (_c = request.body) === null || _c === void 0 ? void 0 : _c.cpf;
     const email = (_d = request.body) === null || _d === void 0 ? void 0 : _d.email;
     const telefone = (_e = request.body) === null || _e === void 0 ? void 0 : _e.telefone;
+    const saldo = (_g = (_f = request.body) === null || _f === void 0 ? void 0 : _f.saldo) !== null && _g !== void 0 ? _g : 0;
     // Gerando o timestamp do servidor
     const createdAt = firestore_1.FieldValue.serverTimestamp();
     // Validação obrigatória do UID
@@ -65,6 +66,7 @@ exports.addUser = (0, https_1.onRequest)({ region: "southamerica-east1", invoker
         cpf: cpf || null,
         email: email || null,
         telefone: telefone || null,
+        saldo: Math.floor(Number(saldo)), // Garante que é um inteiro em centavos
         createdAt: createdAt,
     };
     try {

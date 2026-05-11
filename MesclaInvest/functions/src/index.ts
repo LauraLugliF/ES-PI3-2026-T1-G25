@@ -9,3 +9,6 @@ export {addUser};
 
 // Reexporta todas as functions relacionadas ao módulo de startups.
 export * from "./startups";
+
+// Reexporta todas as functions relacionadas ao módulo de exchange.
+export * from "./exchange";

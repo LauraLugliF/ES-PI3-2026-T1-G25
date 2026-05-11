@@ -91,9 +91,6 @@ class _WalletScreenState extends State<WalletScreen> {
     // Captura o messenger antes de qualquer operação assíncrona.
     final messenger = ScaffoldMessenger.of(context);
 
-    // Captura o navigator antes de qualquer operação assíncrona.
-    final navigator = Navigator.of(context);
-
     // Exibe o dialog e espera o valor digitado pelo usuário.
     showDialog<double>(
       // Usa o contexto atual para abrir o dialog.
@@ -130,9 +127,6 @@ class _WalletScreenState extends State<WalletScreen> {
         if (!mounted) {
           return;
         }
-
-        // Fecha o dialog após sucesso.
-        navigator.pop();
 
         // Mostra confirmação do depósito realizado.
         messenger.showSnackBar(

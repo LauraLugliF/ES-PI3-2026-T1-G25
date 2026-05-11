@@ -13,6 +13,7 @@ class WalletScreen extends StatefulWidget {
 class _WalletScreenState extends State<WalletScreen> {
   late Future<double> _balanceFuture;
   final _exchangeRepository = ExchangeRepository();
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -29,6 +30,19 @@ class _WalletScreenState extends State<WalletScreen> {
     return _exchangeRepository.obterSaldo(user.uid);
   }
 
+  String _formatCurrencyBr(double value) {
+    final parts = value.toStringAsFixed(2).split('.');
+    final integerPart = parts[0];
+    final decimalPart = parts[1];
+
+    final formattedInteger = integerPart.replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (match) => '.',
+    );
+
+    return 'R\$ $formattedInteger,$decimalPart';
+  }
+
   void _onNavTap(int index) {
     if (index == 2) return; // already on wallet
     switch (index) {
@@ -42,6 +56,85 @@ class _WalletScreenState extends State<WalletScreen> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rota de Perfil não implementada')));
         break;
     }
+  }
+
+  void _showDepositDialog() {
+    final controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Depositar'),
+        content: TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
+            hintText: 'Digite o valor em R\$',
+            prefixText: 'R\$ ',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: _isLoading
+                ? null
+                : () async {
+                    final valor = controller.text.trim();
+                    if (valor.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Digite um valor válido')),
+                      );
+                      return;
+                    }
+
+                    final valorDouble = double.tryParse(valor);
+                    if (valorDouble == null || valorDouble <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Valor deve ser maior que zero')),
+                      );
+                      return;
+                    }
+
+                    setState(() => _isLoading = true);
+
+                    try {
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user == null) {
+                        throw Exception('Usuário não autenticado.');
+                      }
+
+                      await _exchangeRepository.adicionarDeposito(user.uid, valorDouble);
+
+                      // Recarrega o saldo
+                      _balanceFuture = _fetchBalance();
+
+                      if (mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Depósito de R\$ $valor realizado com sucesso!')),
+                        );
+                        setState(() {});
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Erro: ${e.toString()}')),
+                        );
+                      }
+                    } finally {
+                      if (mounted) {
+                        setState(() => _isLoading = false);
+                      }
+                    }
+                  },
+            child: _isLoading ? const Text('Processando...') : const Text('Depositar'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -64,13 +157,18 @@ class _WalletScreenState extends State<WalletScreen> {
                 return const Text('Erro ao obter saldo');
               }
               final value = snapshot.data ?? 0.0;
-              final formatted = 'R\$ ${value.toStringAsFixed(2)}';
+              final formatted = _formatCurrencyBr(value);
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text('Saldo disponível', style: theme.textTheme.bodyMedium),
                   const SizedBox(height: 8),
                   Text(formatted, style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: _showDepositDialog,
+                    child: const Text('Depositar'),
+                  ),
                 ],
               );
             },

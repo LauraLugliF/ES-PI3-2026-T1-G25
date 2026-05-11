@@ -1,5 +1,6 @@
 //Max Thomazini Barbosa RA:25003934
 import 'package:flutter/material.dart';
+import '../../widgets/app_logo.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -13,25 +14,10 @@ class WelcomeScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset(
-                'lib/screens/assets/Logo1.png',
-                height: 120,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 104,
-                    height: 104,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2DBE9D).withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.trending_up,
-                      size: 56,
-                      color: Color(0xFF2DBE9D),
-                    ),
-                  );
-                },
+              // App logo
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8.0),
+                child: AppLogo(),
               ),
 
               const SizedBox(height: 30),

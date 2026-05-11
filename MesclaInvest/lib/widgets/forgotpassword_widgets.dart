@@ -1,5 +1,6 @@
 // Max Thomazini Barbosa RA:25003934
 import 'package:flutter/material.dart';
+import 'app_logo.dart';
 
 // Cor principal usada na tela de esqueceu senha.
 const Color kForgotPasswordPrimaryColor = Color(0xFF2DBE9D);
@@ -14,13 +15,7 @@ class ForgotPasswodLogo extends StatelessWidget {
   // Desenha o logo na tela.
   @override
   Widget build(BuildContext context) {
-    // Carrega a imagem dos assets.
-    return Image.asset(
-      // Caminho da imagem do logo.
-      'lib/screens/assets/Logo1.png',
-      // Define a altura da imagem.
-      height: 120,
-    );
+    return const AppLogo();
   }
 }
 

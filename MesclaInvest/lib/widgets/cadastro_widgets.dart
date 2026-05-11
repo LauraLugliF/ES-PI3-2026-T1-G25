@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'app_logo.dart';
 
 // ==========================================
 // CORES DA MARCA (constantes compartilhadas)
@@ -20,11 +21,7 @@ class CadastroLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      'lib/screens/assets/Logo1.png',
-      height: 120,
-      fit: BoxFit.contain,
-    );
+    return const AppLogo();
   }
 }
 

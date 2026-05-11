@@ -4,6 +4,7 @@ import 'screens/welcome_screen/welcome_screen.dart';
 import 'screens/login_screen/login_screen.dart';
 import 'screens/cadastro/cadastro_screen.dart';
 import 'screens/forgotPassword_screen/forgotpassword_screen.dart';
+import 'screens/explore_startups.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +33,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const CadastroFlowScreen(),
         '/forgotpassword': (context) => const ForgotPasswordScreen(),
+        '/explore': (context) => const ExploreStartupsScreen(),
       },
     );
   }

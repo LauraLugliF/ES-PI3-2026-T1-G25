@@ -37,6 +37,7 @@ module.exports = [
             ...googleRules,
             quotes: ["error", "double"],
             "linebreak-style": "off",
+            "max-len": "off",
             "import/no-unresolved": "off",
             "no-unused-vars": "off",
             "@typescript-eslint/no-unused-vars": "error",

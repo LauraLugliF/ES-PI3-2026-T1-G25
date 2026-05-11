@@ -156,11 +156,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           return;
                         }
 
-                        // Atualiza a mensagem exibida abaixo do botão.
-                        setState(() {
-                          // Guarda a resposta do login.
-                          _loginMessage = message;
-                        });
+                        if (message.startsWith('Login efetuado com sucesso')) {
+                          // Navega para a tela de exploração de startups em caso de sucesso.
+                          Navigator.pushReplacementNamed(context, '/explore');
+                        } else {
+                          // Atualiza a mensagem de erro exibida abaixo do botão.
+                          setState(() {
+                            // Guarda a resposta de erro do login.
+                            _loginMessage = message;
+                          });
+                        }
                       }
                     // Desabilita o botão quando os dados estão incompletos.
                     : null,

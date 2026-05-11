@@ -523,11 +523,23 @@ class ExploreStartupsScreen extends StatelessWidget {
 
   Widget _buildBottomNavBar(BuildContext context) {
     final theme = Theme.of(context);
-    
+    void onTap(int index) {
+      if (index == 1) return; // already on explore
+      switch (index) {
+        case 2:
+          Navigator.pushReplacementNamed(context, '/wallet');
+          break;
+        case 3:
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rota de Perfil não implementada')));
+          break;
+      }
+    }
+
     return BottomNavigationBar(
       backgroundColor: theme.scaffoldBackgroundColor,
       type: BottomNavigationBarType.fixed,
       currentIndex: 1,
+      onTap: onTap,
       selectedItemColor: theme.colorScheme.primary,
       unselectedItemColor: theme.colorScheme.onSurfaceVariant,
       selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),

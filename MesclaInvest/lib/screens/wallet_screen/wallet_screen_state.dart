@@ -59,31 +59,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
   // Trata o clique nos itens do menu inferior.
   void _onNavTap(int index) {
-    // Se já estiver na carteira, não faz nada.
-    if (index == 2) return; // already on wallet
-
-    // Decide para onde navegar.
-    switch (index) {
-      // Ícone de início.
-      case 0:
-        // Troca a tela atual por /explore.
-        Navigator.pushReplacementNamed(context, '/explore');
-        break;
-
-      // Ícone de explorar.
-      case 1:
-        // Troca a tela atual por /explore.
-        Navigator.pushReplacementNamed(context, '/explore');
-        break;
-
-      // Ícone de perfil.
-      case 3:
-        // Mostra aviso de rota não implementada.
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rota de Perfil não implementada')),
-        );
-        break;
-    }
+    handleBottomNavTap(context, currentIndex: 2, tappedIndex: index);
   }
 
   // Abre o dialog que solicita o valor do depósito.
@@ -115,10 +91,7 @@ class _WalletScreenState extends State<WalletScreen> {
         }
 
         // Chama o repositório para adicionar o depósito no banco.
-        await _exchangeRepository.adicionarDeposito(
-          user.uid,
-          valorDouble,
-        );
+        await _exchangeRepository.adicionarDeposito(user.uid, valorDouble);
 
         // Atualiza o future para recarregar o saldo exibido.
         _balanceFuture = _fetchBalance();
@@ -211,10 +184,7 @@ class _WalletScreenState extends State<WalletScreen> {
       ),
 
       // Menu inferior da aplicação.
-      bottomNavigationBar: _WalletBottomNavigation(
-        // Passa o tema para o widget do menu.
-        theme: theme,
-
+      bottomNavigationBar: AppBottomNavigation(
         // Define que a aba atual é a carteira.
         currentIndex: 2,
 

@@ -11,7 +11,7 @@ class ExchangeRepository {
 
   Uri _buildFunctionUri(String functionName) {
     final projectId = Firebase.app().options.projectId;
-    if (projectId == null || projectId.isEmpty) {
+    if (projectId.isEmpty) {
       throw Exception('Project ID do Firebase não encontrado.');
     }
 

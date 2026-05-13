@@ -1,9 +1,7 @@
 // LUCAS RODRIGUES XAVIER - 25000508
 // Aqui é o "motor" do cadastro, onde a gente realmente cria a conta no banco de dados do Google (Firebase).
 
-import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:http/http.dart' as http;
 
 import '../models/usuario_model.dart';
 import '../repositories/usuario_repository.dart';

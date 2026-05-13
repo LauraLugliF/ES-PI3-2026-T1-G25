@@ -8,6 +8,7 @@ import 'screens/explore_startups.dart';
 import 'screens/wallet_screen/wallet_screen.dart';
 import 'screens/dashboard_screen/dashboard_screen.dart';
 import 'screens/balcao_screen/balcao_screen.dart';
+import 'screens/startups_detalhadas_screen/startups_detalhadas_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +39,10 @@ class MyApp extends StatelessWidget {
         '/wallet': (context) => const WalletScreen(),
         '/dashboard': (context) => const DashboardScreen(),
         '/balcao': (context) => const BalcaoScreen(),
+        '/wallet': (context) => const WalletScreen(),'/startup-detail': (context) {
+          final id = ModalRoute.of(context)!.settings.arguments as String;
+          return StartupDetailScreen(startupId: id);
+        },
       },
     );
   }

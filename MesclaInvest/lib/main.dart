@@ -6,6 +6,7 @@ import 'screens/cadastro/cadastro_screen.dart';
 import 'screens/forgotPassword_screen/forgotpassword_screen.dart';
 import 'screens/explore_startups.dart';
 import 'screens/wallet_screen/wallet_screen.dart';
+import 'screens/startups_detalhadas_screen/startups_detalhadas_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,7 +36,10 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const CadastroFlowScreen(),
         '/forgotpassword': (context) => const ForgotPasswordScreen(),
         '/explore': (context) => const ExploreStartupsScreen(),
-        '/wallet': (context) => const WalletScreen(),
+        '/wallet': (context) => const WalletScreen(),'/startup-detail': (context) {
+          final id = ModalRoute.of(context)!.settings.arguments as String;
+          return StartupDetailScreen(startupId: id);
+        },
       },
     );
   }

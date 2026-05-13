@@ -38,3 +38,38 @@ export type StartupDocument = {
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 };
+// Laura Lugli Fonseca Pereira RA: 25000739
+import {FieldValue} from "firebase-admin/firestore";
+
+// Define o nível de visibilidade de uma pergunta enviada à startup.
+export type QuestionVisibility = "publica" | "privada";
+
+// Dados mínimos do usuário autenticado necessários para regras de negócio.
+export type AuthenticatedUser = {
+  uid: string;
+  email?: string;
+};
+
+// Documento de pergunta armazenado na subcoleção da startup.
+export type StartupQuestionDocument = {
+  authorUid: string;
+  authorEmail?: string;
+  text: string;
+  visibility: QuestionVisibility;
+  answer?: string;
+  answeredAt?: Timestamp;
+  createdAt: FieldValue;
+};
+
+// Versão resumida de startup usada na listagem do catálogo.
+export type StartupListItem = {
+  id: string;
+  name: string;
+  stage: StartupStage;
+  shortDescription: string;
+  capitalRaisedCents: number;
+  totalTokensIssued: number;
+  currentTokenPriceCents: number;
+  coverImageUrl?: string;
+  tags: string[];
+};

@@ -23,7 +23,7 @@ export const getStartupDetails = onCall(async (request) => {
   if (!startupId) {
     throw new HttpsError(
       "invalid-argument",
-      "Informe o parametro id da startup."
+      "Informe o parametro id da startup.",
     );
   }
 
@@ -62,13 +62,13 @@ export const getStartupDetails = onCall(async (request) => {
       // Estrutura societária — sócios e fundadores
       founders: startup.founders,
       // Conselho e mentores — só retorna se houver dados
-      externalMembers: startup.externalMembers.length > 0
-        ? startup.externalMembers
-        : [],
+      externalMembers: startup.externalMembers.length > 0 ?
+        startup.externalMembers :
+        [],
       // Vídeos demonstrativos — só retorna se houver dados
-      demoVideos: startup.demoVideos.length > 0
-        ? startup.demoVideos
-        : [],
+      demoVideos: startup.demoVideos.length > 0 ?
+        startup.demoVideos :
+        [],
       // URL do plano de negócios em PDF
       pitchDeckUrl: startup.pitchDeckUrl ?? null,
       // Perguntas e respostas públicas

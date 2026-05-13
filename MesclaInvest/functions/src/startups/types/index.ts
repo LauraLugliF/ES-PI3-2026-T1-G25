@@ -1,5 +1,5 @@
 // Max Thomazini Barbosa RA:25003934
-import {Timestamp} from "firebase-admin/firestore";
+import {Timestamp, FieldValue} from "firebase-admin/firestore";
 
 // Etapa atual da startup usada para classificar o estágio do negócio.
 export type StartupStage = "nova" | "em_operacao" | "em_expansao";
@@ -38,8 +38,6 @@ export type StartupDocument = {
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 };
-// Laura Lugli Fonseca Pereira RA: 25000739
-import {FieldValue} from "firebase-admin/firestore";
 
 // Define o nível de visibilidade de uma pergunta enviada à startup.
 export type QuestionVisibility = "publica" | "privada";

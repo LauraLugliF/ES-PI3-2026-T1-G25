@@ -1,6 +1,6 @@
 // Laura Lugli Fonseca Pereira RA: 25000739
 // Repositório responsável pelas consultas da tela de detalhes da startup
-import {FieldValue} from "firebase-admin/firestore";
+
 import {
   StartupDocument,
   StartupListItem,
@@ -33,13 +33,13 @@ export async function listStartupItems(): Promise<StartupListItem[]> {
   const snapshot = await startupsCollection.limit(100).get();
   // Converte cada documento para o formato resumido
   return snapshot.docs.map((doc) =>
-    toListItem(doc.id, doc.data() as StartupDocument)
+    toListItem(doc.id, doc.data() as StartupDocument),
   );
 }
 
 // Busca o documento completo de uma startup pelo ID
 export async function getStartupById(
-  startupId: string
+  startupId: string,
 ): Promise<StartupDocument | undefined> {
   // Busca o documento da startup pelo ID informado
   const snapshot = await startupsCollection.doc(startupId).get();
@@ -54,7 +54,7 @@ export async function getStartupById(
 // Verifica se o usuário autenticado é investidor da startup informada
 export async function userIsInvestor(
   startupId: string,
-  uid: string
+  uid: string,
 ): Promise<boolean> {
   // Busca o documento do investidor na subcoleção investors
   const investorSnapshot = await startupsCollection
@@ -87,14 +87,14 @@ export async function listPublicQuestions(startupId: string) {
     }))
     // Ordena pela mais recente primeiro
     .sort((left, right) =>
-      String(right.createdAt ?? "").localeCompare(String(left.createdAt ?? ""))
+      String(right.createdAt ?? "").localeCompare(String(left.createdAt ?? "")),
     );
 }
 
 // Salva uma nova pergunta na subcoleção de perguntas da startup
 export async function createQuestion(
   startupId: string,
-  question: StartupQuestionDocument
+  question: StartupQuestionDocument,
 ): Promise<string> {
   // Adiciona a pergunta na subcoleção questions da startup
   const questionRef = await startupsCollection

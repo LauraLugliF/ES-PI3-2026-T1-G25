@@ -27,7 +27,7 @@ export const listStartups = onCall(async (request) => {
   if (stage && !allowedStages.includes(stage as StartupStage)) {
     throw new HttpsError(
       "invalid-argument",
-      "Filtro stage invalido. Use nova, em_operacao ou em_expansao."
+      "Filtro stage invalido. Use nova, em_operacao ou em_expansao.",
     );
   }
 

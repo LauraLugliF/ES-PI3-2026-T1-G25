@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 // Importa os widgets reutilizáveis da tela de detalhes
 import '../../widgets/startups_detalhadas_widgets.dart';
 
+// Importa o repository que chama as Cloud Functions.
+import '../../repositories/startup_repository.dart';
+
 // Liga este arquivo ao state separado
 part 'startups_detalhadas_screen_state.dart';
 

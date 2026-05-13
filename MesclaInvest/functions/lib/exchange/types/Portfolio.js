@@ -1,5 +1,5 @@
 "use strict";
 // Max Thomazini Barbosa RA:25003934
-// Exporta todos os tipos do módulo exchange
+// Representa os tokens que um usuário possui de uma startup
 Object.defineProperty(exports, "__esModule", { value: true });
-//# sourceMappingURL=index.js.map
+//# sourceMappingURL=Portfolio.js.map

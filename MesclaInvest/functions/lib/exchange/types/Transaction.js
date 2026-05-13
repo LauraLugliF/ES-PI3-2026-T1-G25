@@ -1,5 +1,5 @@
 "use strict";
 // Max Thomazini Barbosa RA:25003934
-// Exporta todos os tipos do módulo exchange
+// Representa uma transação de compra/venda que já foi realizada
 Object.defineProperty(exports, "__esModule", { value: true });
-//# sourceMappingURL=index.js.map
+//# sourceMappingURL=Transaction.js.map

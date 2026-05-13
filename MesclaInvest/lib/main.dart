@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
         '/wallet': (context) => const WalletScreen(),
         '/dashboard': (context) => const DashboardScreen(),
         '/balcao': (context) => const BalcaoScreen(),
-        '/wallet': (context) => const WalletScreen(),'/startup-detail': (context) {
+        '/startup-detail': (context) {
           final id = ModalRoute.of(context)!.settings.arguments as String;
           return StartupDetailScreen(startupId: id);
         },

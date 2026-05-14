@@ -117,15 +117,7 @@ class StartupData {
   }
 
   static double _clampProgress(double value) {
-    if (value < 0) {
-      return 0.0;
-    }
-
-    if (value > 1) {
-      return 1.0;
-    }
-
-    return value;
+    return value.clamp(0.0, 1.0).toDouble();
   }
 
   static String _firstCharacter(String value) {

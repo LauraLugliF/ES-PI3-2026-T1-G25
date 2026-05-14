@@ -26,7 +26,8 @@ class StartupRepository {
     if (result.data is! Map || result.data['data'] is! List) {
       throw FirebaseFunctionsException(
         code: 'invalid-response',
-        message: 'Resposta inválida ao listar startups.',
+        message:
+            'Resposta inválida ao listar startups. Esperado Map com campo data do tipo List, recebido ${result.data.runtimeType}.',
       );
     }
 

@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/app_bottom_navigation.dart';
+import '../repositories/startup_repository.dart';
 
 class StartupData {
   final String id;
@@ -11,11 +12,7 @@ class StartupData {
   final String name;
   final String sector;
   final String tokens;
-  final double progress;
   final String price;
-  final String variation;
-  final bool isFeatured;
-  final bool isPositiveVariation;
 
   const StartupData({
     required this.id,
@@ -24,112 +21,169 @@ class StartupData {
     required this.name,
     required this.sector,
     required this.tokens,
-    required this.progress,
     required this.price,
-    required this.variation,
-    required this.isFeatured,
-    required this.isPositiveVariation,
   });
 }
 
-class ExploreStartupsScreen extends StatelessWidget {
-  final List<StartupData> startups;
+class ExploreStartupsScreen extends StatefulWidget {
   final List<String> filters;
-  final String searchQuery;
-  final Function(String)? onSearchChanged;
-  final Function(String)? onFilterSelected;
   final String selectedFilter;
+
   const ExploreStartupsScreen({
     super.key,
-    this.startups = _mockStartups,
     this.filters = const ["Todas", "Nova", "Em operação", "Em expansão"],
-    this.searchQuery = "",
-    this.onSearchChanged,
-    this.onFilterSelected,
     this.selectedFilter = "Todas",
   });
 
-  static const List<StartupData> _mockStartups = [
-    StartupData(
-      id: '1',
-      logoLabel: 'G',
-      stage: 'Nova',
-      name: 'Google',
-      sector: 'Tecnologia',
-      tokens: '1,5M',
-      progress: 0.62,
-      price: 'R\$ 250,00',
-      variation: '+21,95%',
-      isFeatured: true,
-      isPositiveVariation: true,
-    ),
-    StartupData(
-      id: '2',
-      logoLabel: 'Nu',
-      stage: 'Em expansão',
-      name: 'Nubank',
-      sector: 'Fintech',
-      tokens: '2,0M',
-      progress: 0.75,
-      price: 'R\$ 312,00',
-      variation: '+14,30%',
-      isFeatured: true,
-      isPositiveVariation: true,
-    ),
-    StartupData(
-      id: '3',
-      logoLabel: 'St',
-      stage: 'Em operação',
-      name: 'Stone',
-      sector: 'Fintech',
-      tokens: '950K',
-      progress: 0.45,
-      price: 'R\$ 189,50',
-      variation: '-6,25%',
-      isFeatured: false,
-      isPositiveVariation: false,
-    ),
-    StartupData(
-      id: '4',
-      logoLabel: 'RD',
-      stage: 'Nova',
-      name: 'RD Station',
-      sector: 'SaaS',
-      tokens: '800K',
-      progress: 0.28,
-      price: 'R\$ 95,00',
-      variation: '+5,60%',
-      isFeatured: false,
-      isPositiveVariation: true,
-    ),
-  ];
+  @override
+  State<ExploreStartupsScreen> createState() => _ExploreStartupsScreenState();
+}
+
+class _ExploreStartupsScreenState extends State<ExploreStartupsScreen> {
+  final StartupRepository _repository = StartupRepository();
+  late Future<List<StartupData>> _startupsFuture;
+  late TextEditingController _searchController;
+  String _searchQuery = '';
+  String _selectedFilter = 'Todas';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _selectedFilter = widget.selectedFilter;
+    _loadStartups();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _loadStartups() {
+    String? stageFilter;
+    if (_selectedFilter != 'Todas') {
+      stageFilter = _convertFilterToStage(_selectedFilter);
+    }
+
+    setState(() {
+      _startupsFuture = _repository
+          .listarStartups(stage: stageFilter, search: _searchQuery)
+          .then((data) => _convertToStartupData(data))
+          .catchError((e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erro ao carregar startups: $e')),
+            );
+            return <StartupData>[];
+          });
+    });
+  }
+
+  String? _convertFilterToStage(String filter) {
+    switch (filter) {
+      case 'Nova':
+        return 'nova';
+      case 'Em operação':
+        return 'em_operacao';
+      case 'Em expansão':
+        return 'em_expansao';
+      default:
+        return null;
+    }
+  }
+
+  List<StartupData> _convertToStartupData(List<Map<String, dynamic>> data) {
+    return data.map((startup) {
+      final int priceInCents = startup['currentTokenPriceCents'] ?? 0;
+      final double priceInReais = priceInCents / 100;
+      final int totalTokens = startup['totalTokensIssued'] ?? 0;
+
+      return StartupData(
+        id: startup['id'] ?? '',
+        logoLabel: _extractLogoLabel(startup['name'] ?? ''),
+        stage: _formatStage(startup['stage'] ?? ''),
+        name: startup['name'] ?? '',
+        sector: (startup['tags'] as List?)?.firstOrNull ?? 'Tecnologia',
+        tokens: _formatTokens(totalTokens),
+        price: 'R\$ ${priceInReais.toStringAsFixed(2)}',
+      );
+    }).toList();
+  }
+
+  String _extractLogoLabel(String name) {
+    if (name.isEmpty) return '?';
+    final parts = name.split(' ');
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 1).toUpperCase();
+  }
+
+  String _formatStage(String stage) {
+    switch (stage) {
+      case 'nova':
+        return 'Nova';
+      case 'em_operacao':
+        return 'Em operação';
+      case 'em_expansao':
+        return 'Em expansão';
+      default:
+        return stage;
+    }
+  }
+
+  String _formatTokens(int tokens) {
+    if (tokens >= 1000000) {
+      return '${(tokens / 1000000).toStringAsFixed(1)}M';
+    } else if (tokens >= 1000) {
+      return '${(tokens / 1000).toStringAsFixed(0)}K';
+    }
+    return tokens.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final featuredStartups = startups.where((s) => s.isFeatured).toList();
-    final listStartups = startups.where((s) => !s.isFeatured).toList();
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            _buildHeader(context),
-            _buildFilters(context),
-            if (featuredStartups.isNotEmpty)
-              _buildFeaturedSection(context, featuredStartups),
-            if (listStartups.isNotEmpty)
-              _buildAllStartupsSection(context, listStartups),
-            if (startups.isEmpty)
-              SliverFillRemaining(
-                child: Center(
-                  child: Text(
-                    'Nenhuma startup encontrada.',
-                    style: theme.textTheme.bodyMedium,
+        child: FutureBuilder<List<StartupData>>(
+          future: _startupsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    theme.colorScheme.primary,
                   ),
                 ),
+              );
+            }
+
+            final startups = snapshot.data ?? [];
+
+            return GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: CustomScrollView(
+                slivers: [
+                  _buildHeader(context),
+                  _buildFilters(context),
+                  if (startups.isNotEmpty)
+                    _buildAllStartupsSection(context, startups),
+                  if (startups.isEmpty)
+                    SliverFillRemaining(
+                      child: Center(
+                        child: Text(
+                          'Nenhuma startup encontrada.',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                    ),
+                ],
               ),
-          ],
+            );
+          },
         ),
       ),
       bottomNavigationBar: AppBottomNavigation(
@@ -162,7 +216,11 @@ class ExploreStartupsScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: TextField(
-                      onChanged: onSearchChanged,
+                      controller: _searchController,
+                      onSubmitted: (value) {
+                        _searchQuery = value;
+                        _loadStartups();
+                      },
                       decoration: InputDecoration(
                         hintText: 'Buscar startups...',
                         hintStyle: theme.textTheme.bodyMedium?.copyWith(
@@ -203,17 +261,18 @@ class ExploreStartupsScreen extends StatelessWidget {
         child: ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           scrollDirection: Axis.horizontal,
-          itemCount: filters.length,
+          itemCount: widget.filters.length,
           separatorBuilder: (ctx, i) => const SizedBox(width: 8),
           itemBuilder: (ctx, i) {
-            final filter = filters[i];
-            final isSelected = filter == selectedFilter;
+            final filter = widget.filters[i];
+            final isSelected = filter == _selectedFilter;
             return Center(
               child: InkWell(
                 onTap: () {
-                  if (onFilterSelected != null) {
-                    onFilterSelected!(filter);
-                  }
+                  setState(() {
+                    _selectedFilter = filter;
+                    _loadStartups();
+                  });
                 },
                 borderRadius: BorderRadius.circular(20),
                 child: Container(
@@ -245,177 +304,6 @@ class ExploreStartupsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFeaturedSection(
-    BuildContext context,
-    List<StartupData> featuredStartups,
-  ) {
-    final theme = Theme.of(context);
-
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Em destaque',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    'Ver todos',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 240,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                scrollDirection: Axis.horizontal,
-                itemCount: featuredStartups.length,
-                separatorBuilder: (ctx, i) => const SizedBox(width: 16),
-                itemBuilder: (ctx, i) {
-                  final startup = featuredStartups[i];
-                  return Container(
-                    width: 200,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            CircleAvatar(
-                              backgroundColor:
-                                  theme.colorScheme.primaryContainer,
-                              child: Text(
-                                startup.logoLabel,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  color: theme.colorScheme.onPrimaryContainer,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.secondaryContainer,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                startup.stage,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.onSecondaryContainer,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          startup.name,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          "${startup.sector} - ${startup.tokens}",
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          height: 30,
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          child: Center(
-                            child: Icon(
-                              startup.isPositiveVariation
-                                  ? Icons.trending_up
-                                  : Icons.trending_down,
-                              color: startup.isPositiveVariation
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.error,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Divider(color: theme.colorScheme.surface),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Preço token",
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                                Text(
-                                  startup.price,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  "Variação",
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                                Text(
-                                  startup.variation,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: startup.isPositiveVariation
-                                        ? theme.colorScheme.primary
-                                        : theme.colorScheme.error,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildAllStartupsSection(
     BuildContext context,
     List<StartupData> listStartups,
@@ -433,7 +321,7 @@ class ExploreStartupsScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Todas as startups',
+                    'Startups',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -452,126 +340,100 @@ class ExploreStartupsScreen extends StatelessWidget {
           final startupIndex = index - 1;
           if (startupIndex < listStartups.length) {
             final startup = listStartups[startupIndex];
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    height: 60,
-                    width: 60,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Text(
-                        startup.logoLabel,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onPrimaryContainer,
+            return InkWell(
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  '/startup-detail',
+                  arguments: startup.id,
+                );
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          height: 60,
+                          width: 60,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Text(
+                              startup.logoLabel,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.onPrimaryContainer,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.secondaryContainer,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            startup.stage,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSecondaryContainer,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
+                    const SizedBox(height: 12),
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              startup.name,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.secondaryContainer,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                startup.stage,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.onSecondaryContainer,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
+                        Text(
+                          startup.name,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
+                        const SizedBox(height: 4),
                         Text(
                           "${startup.sector} - Tokens: ${startup.tokens}",
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: LinearProgressIndicator(
-                                  value: startup.progress,
-                                  backgroundColor: theme.colorScheme.surface,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    theme.colorScheme.primary,
-                                  ),
-                                  minHeight: 6,
-                                ),
+                            Text(
+                              startup.price,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              "${(startup.progress * 100).toInt()}% captado",
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.w500,
-                              ),
+                            Icon(
+                              Icons.chevron_right,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ],
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        startup.price,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        startup.variation,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: startup.isPositiveVariation
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.error,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.chevron_right,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           }

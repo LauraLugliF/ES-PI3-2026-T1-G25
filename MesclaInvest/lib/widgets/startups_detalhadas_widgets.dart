@@ -158,7 +158,7 @@ class StartupDetailHeader extends StatelessWidget {
             // Espaçamento vertical entre cards
             mainAxisSpacing: 8,
             // Proporção largura/altura dos cards
-            childAspectRatio: 2.4,
+            childAspectRatio: 1.9,
             children: [
               // Card do preço do token
               _MetricCard(
@@ -996,7 +996,7 @@ class _MetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(9),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         // Fundo cinza muito claro
         color: const Color(0xFFF8F9FA),
@@ -1004,7 +1004,7 @@ class _MetricCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Rótulo da métrica em cinza
           Text(

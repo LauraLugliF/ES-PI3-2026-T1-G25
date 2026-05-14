@@ -6,6 +6,12 @@ import '../repositories/startup_repository.dart';
 import '../widgets/app_bottom_navigation.dart';
 
 class StartupData {
+  static const String allFilterLabel = 'Todas';
+  static const String newStageLabel = 'Nova';
+  static const String operatingStageLabel = 'Em operação';
+  static const String expansionStageLabel = 'Em expansão';
+  static const String unknownStageLabel = 'Sem estágio';
+
   final String id;
   final String logoLabel;
   final String stage;
@@ -27,6 +33,8 @@ class StartupData {
     required this.price,
     required this.isFeatured,
   });
+
+  int get progressPercent => (progress * 100).toInt();
 
   factory StartupData.fromListItem(
     Map<String, dynamic> data, {
@@ -83,13 +91,13 @@ class StartupData {
   static String _formatStage(String? stage) {
     switch (stage) {
       case 'nova':
-        return 'Nova';
+        return newStageLabel;
       case 'em_operacao':
-        return 'Em operação';
+        return operatingStageLabel;
       case 'em_expansao':
-        return 'Em expansão';
+        return expansionStageLabel;
       default:
-        return 'Sem estágio';
+        return unknownStageLabel;
     }
   }
 
@@ -165,7 +173,12 @@ class ExploreStartupsScreen extends StatefulWidget {
   ExploreStartupsScreen({
     super.key,
     StartupRepository? repository,
-    this.filters = const ["Todas", "Nova", "Em operação", "Em expansão"],
+    this.filters = const [
+      StartupData.allFilterLabel,
+      StartupData.newStageLabel,
+      StartupData.operatingStageLabel,
+      StartupData.expansionStageLabel,
+    ],
   }) : repository = repository ?? StartupRepository();
 
   @override
@@ -174,7 +187,7 @@ class ExploreStartupsScreen extends StatefulWidget {
 
 class _ExploreStartupsScreenState extends State<ExploreStartupsScreen> {
   late Future<List<StartupData>> _startupsFuture;
-  String _selectedFilter = 'Todas';
+  String _selectedFilter = StartupData.allFilterLabel;
   String _searchQuery = '';
 
   @override
@@ -205,7 +218,8 @@ class _ExploreStartupsScreenState extends State<ExploreStartupsScreen> {
 
     return startups.where((startup) {
       final matchesFilter =
-          _selectedFilter == 'Todas' || startup.stage == _selectedFilter;
+          _selectedFilter == StartupData.allFilterLabel ||
+          startup.stage == _selectedFilter;
       if (!matchesFilter) {
         return false;
       }
@@ -576,7 +590,7 @@ class _ExploreStartupsContent extends StatelessWidget {
                           color: theme.colorScheme.surfaceContainerHighest,
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            "${(startup.progress * 100).toInt()}% captado",
+                            "${startup.progressPercent}% captado",
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: theme.colorScheme.primary,
                               fontWeight: FontWeight.w600,
@@ -616,7 +630,7 @@ class _ExploreStartupsContent extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  "${(startup.progress * 100).toInt()}%",
+                                  "${startup.progressPercent}%",
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color: theme.colorScheme.primary,
                                     fontWeight: FontWeight.bold,
@@ -757,7 +771,7 @@ class _ExploreStartupsContent extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              "${(startup.progress * 100).toInt()}% captado",
+                              "${startup.progressPercent}% captado",
                               style: theme.textTheme.labelSmall?.copyWith(
                                 color: theme.colorScheme.primary,
                                 fontWeight: FontWeight.w500,
@@ -779,7 +793,7 @@ class _ExploreStartupsContent extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        "${(startup.progress * 100).toInt()}% captado",
+                        "${startup.progressPercent}% captado",
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.primary,
                         ),

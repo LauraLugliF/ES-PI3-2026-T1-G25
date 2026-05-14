@@ -49,13 +49,7 @@ class StartupData {
     final totalProjectedValue = totalTokensIssued * currentTokenPriceCents;
     final rawProgress =
         totalProjectedValue > 0 ? capitalRaisedCents / totalProjectedValue : 0.0;
-    final progress = totalProjectedValue > 0
-        ? (rawProgress < 0
-              ? 0.0
-              : rawProgress > 1
-              ? 1.0
-              : rawProgress)
-        : 0.0;
+    final progress = _clampProgress(rawProgress);
 
     return StartupData(
       id: data['id'] as String? ?? '',
@@ -76,8 +70,11 @@ class StartupData {
         .where((part) => part.trim().isNotEmpty)
         .toList();
 
-    if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    if (parts.length >= 2) {
+      final initials = '${_firstCharacter(parts[0])}${_firstCharacter(parts[1])}';
+      if (initials.trim().isNotEmpty) {
+        return initials.toUpperCase();
+      }
     }
 
     final sanitized = name.trim();
@@ -114,11 +111,32 @@ class StartupData {
     return tag
         .split(RegExp(r'[_\s-]+'))
         .where((part) => part.isNotEmpty)
-        .map(
-          (part) =>
-              '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}',
-        )
+        .map(_capitalizeWord)
         .join(' ');
+  }
+
+  static double _clampProgress(double value) {
+    if (value < 0) {
+      return 0.0;
+    }
+
+    if (value > 1) {
+      return 1.0;
+    }
+
+    return value;
+  }
+
+  static String _firstCharacter(String value) {
+    return value.isEmpty ? '' : value.substring(0, 1);
+  }
+
+  static String _capitalizeWord(String value) {
+    if (value.isEmpty) {
+      return value;
+    }
+
+    return '${_firstCharacter(value).toUpperCase()}${value.substring(1).toLowerCase()}';
   }
 
   static String _formatCompactValue(double value) {

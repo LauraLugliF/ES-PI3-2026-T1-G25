@@ -1,4 +1,4 @@
-// Laura Lugli Fonseca Pereira RA: 25000739
+// Ana Beatriz da Silva - 2500143
 // Handler que lista e filtra as startups do catálogo MesclaInvest
 import {HttpsError, onCall} from "firebase-functions/https";
 import {allowedStages} from "../shared/constants";

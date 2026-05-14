@@ -41,7 +41,7 @@ export const createStartupQuestion = onCall(async (request) => {
   if (!allowedVisibilities.includes(visibility as QuestionVisibility)) {
     throw new HttpsError(
       "invalid-argument",
-      "Visibility invalida. Use publica ou privada."
+      "Visibility invalida. Use publica ou privada.",
     );
   }
 
@@ -62,7 +62,7 @@ export const createStartupQuestion = onCall(async (request) => {
     if (!isInvestor) {
       throw new HttpsError(
         "permission-denied",
-        "Somente investidores desta startup podem enviar perguntas privadas."
+        "Somente investidores desta startup podem enviar perguntas privadas.",
       );
     }
   }

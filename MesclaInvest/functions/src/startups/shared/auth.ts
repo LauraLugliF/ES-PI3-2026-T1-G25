@@ -6,13 +6,13 @@ import {AuthenticatedUser} from "../types";
 // Verifica se o usuário está autenticado e retorna seus dados básicos
 // Lança erro se não houver usuário autenticado na requisição
 export function requireAuthenticatedUser(
-  request: CallableRequest
+  request: CallableRequest,
 ): AuthenticatedUser {
   // Verifica se existe um usuário autenticado na requisição
   if (!request.auth) {
     throw new HttpsError(
       "unauthenticated",
-      "Usuario precisa estar autenticado para acessar esta funcao."
+      "Usuario precisa estar autenticado para acessar esta funcao.",
     );
   }
 

@@ -33,12 +33,10 @@ void main() {
   group(
     'Firebase callable functions de startups',
     () {
-      late String idToken;
-
       setUpAll(() async {
         // Cria/Autentica o usuário para ter o token disponível, 
         // caso sua function seed exija no futuro (atualmente roda livre no emulador).
-        idToken = await _createAuthUserForTests();
+        await _createAuthUserForTests();
       });
 
       test('seedStartupCatalog popula startups demonstrativas', () async {

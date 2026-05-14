@@ -1,14 +1,6 @@
 // Max Thomazini Barbosa RA:25003934
-// Tipos relacionados ao módulo `exchange`.
-export type User = {
-  uid: string;
-  nome?: string | null;
-  cpf?: string | null;
-  email?: string | null;
-  telefone?: string | null;
-  // saldo em centavos (inteiro)
-  saldo?: number | null;
-  createdAt?: unknown;
-};
+// Exporta todos os tipos do módulo exchange
 
-export type BalanceResult = number | null; // saldo em centavos ou null se não existir
+export type {Portfolio} from "./Portfolio";
+export type {Transaction} from "./Transaction";
+export type {User, BalanceResult} from "./User";

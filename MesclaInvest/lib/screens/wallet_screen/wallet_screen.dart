@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 
 // Repositório responsável por acessar as functions de exchange.
 import '../../repositories/exchange_repository.dart';
+import '../../widgets/app_bottom_navigation.dart';
 
 // Inclui o dialog de depósito que foi separado em outro arquivo.
 part '../../widgets/wallet_screen_deposit_dialog.dart';

@@ -39,8 +39,14 @@ class StartupData {
         (data['currentTokenPriceCents'] as num?)?.toDouble() ?? 0;
 
     final totalProjectedValue = totalTokensIssued * currentTokenPriceCents;
+    final rawProgress =
+        totalProjectedValue > 0 ? capitalRaisedCents / totalProjectedValue : 0.0;
     final progress = totalProjectedValue > 0
-        ? (capitalRaisedCents / totalProjectedValue).clamp(0, 1).toDouble()
+        ? (rawProgress < 0
+              ? 0.0
+              : rawProgress > 1
+              ? 1.0
+              : rawProgress)
         : 0.0;
 
     return StartupData(
@@ -62,7 +68,7 @@ class StartupData {
         .where((part) => part.trim().isNotEmpty)
         .toList();
 
-    if (parts.length >= 2) {
+    if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
 
@@ -151,10 +157,12 @@ class StartupData {
 }
 
 class ExploreStartupsScreen extends StatefulWidget {
+  static const int maxFeaturedStartups = 2;
+
   final StartupRepository repository;
   final List<String> filters;
 
-  const ExploreStartupsScreen({
+  ExploreStartupsScreen({
     super.key,
     StartupRepository? repository,
     this.filters = const ["Todas", "Nova", "Em operação", "Em expansão"],
@@ -187,7 +195,7 @@ class _ExploreStartupsScreenState extends State<ExploreStartupsScreen> {
     return startups.asMap().entries.map((entry) {
       return StartupData.fromListItem(
         entry.value,
-        isFeatured: entry.key < 2,
+        isFeatured: entry.key < ExploreStartupsScreen.maxFeaturedStartups,
       );
     }).toList();
   }

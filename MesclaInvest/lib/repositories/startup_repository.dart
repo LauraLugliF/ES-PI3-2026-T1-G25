@@ -22,8 +22,15 @@ class StartupRepository {
       if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
     });
 
-    // Converte a lista retornada para Map e devolve para a tela.
-    final data = result.data['data'] as List<dynamic>? ?? const [];
+    // Valida e converte a lista retornada para Map antes de devolver para a tela.
+    if (result.data is! Map || result.data['data'] is! List) {
+      throw FirebaseFunctionsException(
+        code: 'invalid-response',
+        message: 'Resposta inválida ao listar startups.',
+      );
+    }
+
+    final data = result.data['data'] as List<dynamic>;
     return data
         .map((item) => Map<String, dynamic>.from(item as Map))
         .toList();

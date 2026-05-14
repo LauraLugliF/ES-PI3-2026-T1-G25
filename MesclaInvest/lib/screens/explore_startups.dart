@@ -11,6 +11,7 @@ class StartupData {
   static const String operatingStageLabel = 'Em operação';
   static const String expansionStageLabel = 'Em expansão';
   static const String unknownStageLabel = 'Sem estágio';
+  static const String unknownCategoryLabel = 'Sem categoria';
 
   final String id;
   final String logoLabel;
@@ -100,12 +101,12 @@ class StartupData {
 
   static String _formatSector(dynamic tags) {
     if (tags is! List || tags.isEmpty) {
-      return 'Sem categoria';
+      return unknownCategoryLabel;
     }
 
     final tag = tags.first.toString().trim();
     if (tag.isEmpty) {
-      return 'Sem categoria';
+      return unknownCategoryLabel;
     }
 
     return tag

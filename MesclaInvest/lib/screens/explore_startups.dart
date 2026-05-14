@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../repositories/startup_repository.dart';
 import '../widgets/app_bottom_navigation.dart';
 
 class StartupData {
@@ -13,9 +14,7 @@ class StartupData {
   final String tokens;
   final double progress;
   final String price;
-  final String variation;
   final bool isFeatured;
-  final bool isPositiveVariation;
 
   const StartupData({
     required this.id,
@@ -26,83 +25,302 @@ class StartupData {
     required this.tokens,
     required this.progress,
     required this.price,
-    required this.variation,
     required this.isFeatured,
-    required this.isPositiveVariation,
   });
+
+  factory StartupData.fromListItem(
+    Map<String, dynamic> data, {
+    required bool isFeatured,
+  }) {
+    final capitalRaisedCents =
+        (data['capitalRaisedCents'] as num?)?.toDouble() ?? 0;
+    final totalTokensIssued = (data['totalTokensIssued'] as num?)?.toDouble() ?? 0;
+    final currentTokenPriceCents =
+        (data['currentTokenPriceCents'] as num?)?.toDouble() ?? 0;
+
+    final totalProjectedValue = totalTokensIssued * currentTokenPriceCents;
+    final progress = totalProjectedValue > 0
+        ? (capitalRaisedCents / totalProjectedValue).clamp(0, 1).toDouble()
+        : 0.0;
+
+    return StartupData(
+      id: data['id'] as String? ?? '',
+      logoLabel: _buildLogoLabel(data['name'] as String? ?? ''),
+      stage: _formatStage(data['stage'] as String?),
+      name: data['name'] as String? ?? 'Startup',
+      sector: _formatSector(data['tags']),
+      tokens: _formatCompactValue(totalTokensIssued),
+      progress: progress,
+      price: _formatCurrencyFromCents(currentTokenPriceCents),
+      isFeatured: isFeatured,
+    );
+  }
+
+  static String _buildLogoLabel(String name) {
+    final parts = name
+        .split(RegExp(r'\s+'))
+        .where((part) => part.trim().isNotEmpty)
+        .toList();
+
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+
+    final sanitized = name.trim();
+    if (sanitized.isEmpty) {
+      return '?';
+    }
+
+    return sanitized.substring(0, sanitized.length >= 2 ? 2 : 1).toUpperCase();
+  }
+
+  static String _formatStage(String? stage) {
+    switch (stage) {
+      case 'nova':
+        return 'Nova';
+      case 'em_operacao':
+        return 'Em operação';
+      case 'em_expansao':
+        return 'Em expansão';
+      default:
+        return 'Sem estágio';
+    }
+  }
+
+  static String _formatSector(dynamic tags) {
+    if (tags is! List || tags.isEmpty) {
+      return 'Sem categoria';
+    }
+
+    final tag = tags.first.toString().trim();
+    if (tag.isEmpty) {
+      return 'Sem categoria';
+    }
+
+    return tag
+        .split(RegExp(r'[_\s-]+'))
+        .where((part) => part.isNotEmpty)
+        .map(
+          (part) =>
+              '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}',
+        )
+        .join(' ');
+  }
+
+  static String _formatCompactValue(double value) {
+    if (value >= 1000000) {
+      return '${_formatDecimal(value / 1000000)}M';
+    }
+
+    if (value >= 1000) {
+      return '${_formatDecimal(value / 1000)}K';
+    }
+
+    return value.toInt().toString();
+  }
+
+  static String _formatCurrencyFromCents(double cents) {
+    final normalized = cents.round();
+    final reais = normalized ~/ 100;
+    final fractional = (normalized % 100).toString().padLeft(2, '0');
+
+    return 'R\$ ${_formatThousands(reais)},$fractional';
+  }
+
+  static String _formatThousands(int value) {
+    final digits = value.toString();
+    final buffer = StringBuffer();
+
+    for (var index = 0; index < digits.length; index++) {
+      final remaining = digits.length - index;
+      buffer.write(digits[index]);
+      if (remaining > 1 && remaining % 3 == 1) {
+        buffer.write('.');
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  static String _formatDecimal(double value) {
+    final hasFraction = value != value.truncateToDouble();
+    return value
+        .toStringAsFixed(hasFraction ? 1 : 0)
+        .replaceAll('.', ',');
+  }
 }
 
-class ExploreStartupsScreen extends StatelessWidget {
-  final List<StartupData> startups;
+class ExploreStartupsScreen extends StatefulWidget {
+  final StartupRepository repository;
   final List<String> filters;
-  final String searchQuery;
-  final Function(String)? onSearchChanged;
-  final Function(String)? onFilterSelected;
-  final String selectedFilter;
+
   const ExploreStartupsScreen({
     super.key,
-    this.startups = _mockStartups,
+    StartupRepository? repository,
     this.filters = const ["Todas", "Nova", "Em operação", "Em expansão"],
-    this.searchQuery = "",
-    this.onSearchChanged,
-    this.onFilterSelected,
-    this.selectedFilter = "Todas",
+  }) : repository = repository ?? StartupRepository();
+
+  @override
+  State<ExploreStartupsScreen> createState() => _ExploreStartupsScreenState();
+}
+
+class _ExploreStartupsScreenState extends State<ExploreStartupsScreen> {
+  late Future<List<StartupData>> _startupsFuture;
+  String _selectedFilter = 'Todas';
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _startupsFuture = _loadStartups();
+  }
+
+  Future<List<StartupData>> _loadStartups() async {
+    final startups = await widget.repository.listarStartups();
+
+    startups.sort((left, right) {
+      final leftValue = (left['capitalRaisedCents'] as num?)?.toDouble() ?? 0;
+      final rightValue = (right['capitalRaisedCents'] as num?)?.toDouble() ?? 0;
+      return rightValue.compareTo(leftValue);
+    });
+
+    return startups.asMap().entries.map((entry) {
+      return StartupData.fromListItem(
+        entry.value,
+        isFeatured: entry.key < 2,
+      );
+    }).toList();
+  }
+
+  List<StartupData> _applyFilters(List<StartupData> startups) {
+    final normalizedQuery = _searchQuery.toLowerCase();
+
+    return startups.where((startup) {
+      final matchesFilter =
+          _selectedFilter == 'Todas' || startup.stage == _selectedFilter;
+      if (!matchesFilter) {
+        return false;
+      }
+
+      if (normalizedQuery.isEmpty) {
+        return true;
+      }
+
+      final searchable = [
+        startup.name,
+        startup.sector,
+        startup.stage,
+        startup.tokens,
+      ].join(' ').toLowerCase();
+
+      return searchable.contains(normalizedQuery);
+    }).toList();
+  }
+
+  void _reloadStartups() {
+    setState(() {
+      _startupsFuture = _loadStartups();
+    });
+  }
+
+  void _onSearchChanged(String value) {
+    setState(() {
+      _searchQuery = value.trim();
+    });
+  }
+
+  void _onFilterSelected(String value) {
+    if (_selectedFilter == value) {
+      return;
+    }
+
+    setState(() {
+      _selectedFilter = value;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<StartupData>>(
+      future: _startupsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _StateScaffold(
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return _StateScaffold(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Não foi possível carregar as startups.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: _reloadStartups,
+                      child: const Text('Tentar novamente'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        return _ExploreStartupsContent(
+          startups: _applyFilters(snapshot.data ?? const []),
+          filters: widget.filters,
+          onSearchChanged: _onSearchChanged,
+          onFilterSelected: _onFilterSelected,
+          selectedFilter: _selectedFilter,
+        );
+      },
+    );
+  }
+}
+
+class _StateScaffold extends StatelessWidget {
+  final Widget child;
+
+  const _StateScaffold({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(child: child),
+      bottomNavigationBar: AppBottomNavigation(
+        currentIndex: 1,
+        onTap: (index) =>
+            handleBottomNavTap(context, currentIndex: 1, tappedIndex: index),
+      ),
+    );
+  }
+}
+
+class _ExploreStartupsContent extends StatelessWidget {
+  final List<StartupData> startups;
+  final List<String> filters;
+  final ValueChanged<String>? onSearchChanged;
+  final ValueChanged<String>? onFilterSelected;
+  final String selectedFilter;
+
+  const _ExploreStartupsContent({
+    required this.startups,
+    required this.filters,
+    required this.onSearchChanged,
+    required this.onFilterSelected,
+    required this.selectedFilter,
   });
 
-  static const List<StartupData> _mockStartups = [
-    StartupData(
-      id: '1',
-      logoLabel: 'G',
-      stage: 'Nova',
-      name: 'Google',
-      sector: 'Tecnologia',
-      tokens: '1,5M',
-      progress: 0.62,
-      price: 'R\$ 250,00',
-      variation: '+21,95%',
-      isFeatured: true,
-      isPositiveVariation: true,
-    ),
-    StartupData(
-      id: '2',
-      logoLabel: 'Nu',
-      stage: 'Em expansão',
-      name: 'Nubank',
-      sector: 'Fintech',
-      tokens: '2,0M',
-      progress: 0.75,
-      price: 'R\$ 312,00',
-      variation: '+14,30%',
-      isFeatured: true,
-      isPositiveVariation: true,
-    ),
-    StartupData(
-      id: '3',
-      logoLabel: 'St',
-      stage: 'Em operação',
-      name: 'Stone',
-      sector: 'Fintech',
-      tokens: '950K',
-      progress: 0.45,
-      price: 'R\$ 189,50',
-      variation: '-6,25%',
-      isFeatured: false,
-      isPositiveVariation: false,
-    ),
-    StartupData(
-      id: '4',
-      logoLabel: 'RD',
-      stage: 'Nova',
-      name: 'RD Station',
-      sector: 'SaaS',
-      tokens: '800K',
-      progress: 0.28,
-      price: 'R\$ 95,00',
-      variation: '+5,60%',
-      isFeatured: false,
-      isPositiveVariation: true,
-    ),
-  ];
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -348,14 +566,12 @@ class ExploreStartupsScreen extends StatelessWidget {
                         Container(
                           height: 30,
                           color: theme.colorScheme.surfaceContainerHighest,
-                          child: Center(
-                            child: Icon(
-                              startup.isPositiveVariation
-                                  ? Icons.trending_up
-                                  : Icons.trending_down,
-                              color: startup.isPositiveVariation
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.error,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            "${(startup.progress * 100).toInt()}% captado",
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
@@ -386,17 +602,15 @@ class ExploreStartupsScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  "Variação",
+                                  "Captação",
                                   style: theme.textTheme.labelSmall?.copyWith(
                                     color: theme.colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                                 Text(
-                                  startup.variation,
+                                  "${(startup.progress * 100).toInt()}%",
                                   style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: startup.isPositiveVariation
-                                        ? theme.colorScheme.primary
-                                        : theme.colorScheme.error,
+                                    color: theme.colorScheme.primary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -557,11 +771,9 @@ class ExploreStartupsScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        startup.variation,
+                        "${(startup.progress * 100).toInt()}% captado",
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: startup.isPositiveVariation
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.error,
+                          color: theme.colorScheme.primary,
                         ),
                       ),
                     ],

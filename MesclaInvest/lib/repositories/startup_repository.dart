@@ -8,6 +8,27 @@ class StartupRepository {
   // Instância do Firebase Functions para chamadas callable.
   final FirebaseFunctions _functions = FirebaseFunctions.instance;
 
+  // Lista as startups do catálogo aplicando filtros opcionais.
+  Future<List<Map<String, dynamic>>> listarStartups({
+    String? stage,
+    String? search,
+  }) async {
+    // Obtém a referência da function listStartups.
+    final callable = _functions.httpsCallable('listStartups');
+
+    // Chama a function com os filtros informados.
+    final result = await callable.call({
+      if (stage != null) 'stage': stage,
+      if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+    });
+
+    // Converte a lista retornada para Map e devolve para a tela.
+    final data = result.data['data'] as List<dynamic>? ?? const [];
+    return data
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
   // Busca os detalhes completos de uma startup pelo ID.
   Future<Map<String, dynamic>> buscarDetalheStartup(String startupId) async {
     // Obtém a referência da function getStartupDetails.

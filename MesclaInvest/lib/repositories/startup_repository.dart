@@ -20,6 +20,29 @@ class StartupRepository {
     return Map<String, dynamic>.from(result.data['data'] as Map);
   }
 
+  // Lista as startups do catálogo com filtros opcionais.
+  Future<List<Map<String, dynamic>>> listarStartups({
+    String? stage,
+    String? search,
+  }) async {
+    // Obtém a referência da function listStartups.
+    final callable = _functions.httpsCallable('listStartups');
+
+    // Prepara os parâmetros
+    final params = <String, dynamic>{};
+    if (stage != null) params['stage'] = stage;
+    if (search != null) params['search'] = search;
+
+    // Chama a function e retorna a lista de startups.
+    final result = await callable.call(params);
+
+    // Extrai e converte a lista de startups.
+    final List<dynamic> startups = result.data['data'] as List;
+    return startups
+        .map((startup) => Map<String, dynamic>.from(startup as Map))
+        .toList();
+  }
+
   // Envia uma pergunta pública para a startup.
   Future<void> enviarPergunta({
     required String startupId,

@@ -1,3 +1,4 @@
+// LUCAS RODRIGUES XAVIER - 25000508
 import 'package:flutter/material.dart';
 
 void handleBottomNavTap(
@@ -13,7 +14,7 @@ void handleBottomNavTap(
     0 => '/dashboard',
     1 => '/explore',
     2 => '/wallet',
-    3 => '/dashboard',
+    3 => '/profile',
     _ => '/explore',
   };
 

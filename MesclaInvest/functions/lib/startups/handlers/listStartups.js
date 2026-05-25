@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.listStartups = void 0;
-// Laura Lugli Fonseca Pereira RA: 25000739
+// Ana Beatriz da Silva - 2500143
 // Handler que lista e filtra as startups do catálogo MesclaInvest
 const https_1 = require("firebase-functions/https");
 const constants_1 = require("../shared/constants");

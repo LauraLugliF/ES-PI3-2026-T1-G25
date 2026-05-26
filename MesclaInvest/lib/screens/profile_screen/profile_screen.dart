@@ -1,9 +1,12 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../widgets/app_bottom_navigation.dart';
-import '../../services/profile_service.dart';
 import '../../widgets/profile_widgets.dart';
+import '../../services/profile_service.dart';
+
+// Nota: esta versão do arquivo mantém apenas a parte visual.
+// TODO: reimplementar a lógica removida (Firebase auth, chamada de funções,
+// verificação de telefone, linking de credenciais, tratamento de erros).
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,43 +21,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     email: 'email@exemplo.com',
     phone: '(00) 00000-0000',
   );
-
-  bool _isSigningOut = false;
-
+  // TODO: quando reimplementar, remover 'const' e popular com dados reais.
+  
   void _onNavTap(int index) {
+    // Delegar navegação ao helper já existente.
+    // TODO: ajustar comportamento se necessário ao restaurar lógica.
     handleBottomNavTap(context, currentIndex: 3, tappedIndex: index);
   }
 
-  void _showSnackBar(String message) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  Future<void> _logout() async {
-    if (_isSigningOut) return;
-
-    setState(() {
-      _isSigningOut = true;
-    });
-
-    try {
-      await FirebaseAuth.instance.signOut();
-
-      if (!mounted) return;
-
-      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-    } catch (e) {
-      _showSnackBar('Não foi possível sair da conta: ${e.toString()}');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSigningOut = false;
-        });
-      }
-    }
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
@@ -73,18 +50,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             ProfileHeaderCard(profileData: _profileData),
             const SizedBox(height: 20),
+            
+            const Divider(height: 40),
+
+            // --- SEÇÃO DE 2FA ---
+            const Text('Segurança', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            // Segurança: seção visual. Implementar lógica de 2FA abaixo.
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Nenhum número cadastrado na conta.'),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    // Botão desabilitado (interface apenas).
+                    // TODO: implementar `_start2FAFlow()` e alterar `onPressed` para
+                    // `() => _start2FAFlow()` quando reativar a lógica.
+                    onPressed: null,
+                    icon: const Icon(Icons.security),
+                    label: const Text('Ativar Autenticação por SMS'),
+                  ),
+                ),
+              ],
+            ),
+
+            const Divider(height: 40),
+
+            // --- BOTÃO DE LOGOUT ---
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _isSigningOut ? null : _logout,
-                icon: _isSigningOut
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.logout),
-                label: Text(_isSigningOut ? 'Saindo...' : 'Sair da conta'),
+                child: OutlinedButton.icon(
+                // Botão de logout desabilitado (interface apenas).
+                // TODO: implementar `_logout()` e alterar `onPressed` para
+                // `() => _logout()` quando reativar a lógica de autenticação.
+                onPressed: null,
+                icon: const Icon(Icons.logout),
+                label: const Text('Sair da conta'),
               ),
             ),
           ],

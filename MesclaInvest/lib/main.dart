@@ -6,7 +6,7 @@ import 'screens/welcome_screen/welcome_screen.dart';
 import 'screens/login_screen/login_screen.dart';
 import 'screens/cadastro/cadastro_screen.dart';
 import 'screens/forgotPassword_screen/forgotpassword_screen.dart';
-import 'screens/explore_startups.dart';
+import 'screens/explore_startups_screen/explore_startups_screen.dart';
 import 'screens/wallet_screen/wallet_screen.dart';
 import 'screens/dashboard_screen/dashboard_screen.dart';
 import 'screens/balcao_screen/balcao_screen.dart';

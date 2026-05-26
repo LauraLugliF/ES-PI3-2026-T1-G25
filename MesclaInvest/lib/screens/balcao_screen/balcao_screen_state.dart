@@ -1,4 +1,4 @@
-//Max Thomazini Barbosa RA:25003934
+// LUCAS RODRIGUES XAVIER - 25000508
 part of 'balcao_screen.dart';
 
 class _BalcaoScreenState extends State<BalcaoScreen> {
@@ -15,9 +15,32 @@ class _BalcaoScreenState extends State<BalcaoScreen> {
   final TextEditingController _sellQuantidadeController = TextEditingController();
   final TextEditingController _sellPrecoController = TextEditingController();
 
+  double _buyTotal = 0.0;
+  double _sellTotal = 0.0;
+
   @override
   void initState() {
     super.initState();
+    _buyQuantidadeController.addListener(_recalcBuyTotal);
+    _buyPrecoController.addListener(_recalcBuyTotal);
+    _sellQuantidadeController.addListener(_recalcSellTotal);
+    _sellPrecoController.addListener(_recalcSellTotal);
+  }
+
+  void _recalcBuyTotal() {
+    final qty = double.tryParse(_buyQuantidadeController.text) ?? 0.0;
+    final price = double.tryParse(_buyPrecoController.text) ?? 0.0;
+    setState(() {
+      _buyTotal = qty * price;
+    });
+  }
+
+  void _recalcSellTotal() {
+    final qty = double.tryParse(_sellQuantidadeController.text) ?? 0.0;
+    final price = double.tryParse(_sellPrecoController.text) ?? 0.0;
+    setState(() {
+      _sellTotal = qty * price;
+    });
   }
 
   Future<UserInvestmentsDashboard> _fetchDashboard() async {
@@ -91,6 +114,10 @@ class _BalcaoScreenState extends State<BalcaoScreen> {
 
   @override
   void dispose() {
+    _buyQuantidadeController.removeListener(_recalcBuyTotal);
+    _buyPrecoController.removeListener(_recalcBuyTotal);
+    _sellQuantidadeController.removeListener(_recalcSellTotal);
+    _sellPrecoController.removeListener(_recalcSellTotal);
     _buyQuantidadeController.dispose();
     _buyPrecoController.dispose();
     _sellQuantidadeController.dispose();
@@ -156,12 +183,29 @@ class _BalcaoScreenState extends State<BalcaoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text('Balcão de Tokens'),
-        backgroundColor: theme.colorScheme.primary,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        toolbarHeight: 70,
+        leading: IconButton(
+          icon: const Icon(Icons.chevron_left, color: Color(0xFF333333), size: 28),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        titleSpacing: 0,
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Negociação', style: TextStyle(color: Color(0xFF999999), fontSize: 11, fontWeight: FontWeight.w400)),
+            Text('Balcão de Tokens', style: TextStyle(color: Color(0xFF111111), fontSize: 19, fontWeight: FontWeight.w800)),
+          ],
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(0.5),
+          child: Container(color: const Color(0xFFF0F0F0), height: 0.5),
+        ),
       ),
       body: SafeArea(
         child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -172,7 +216,7 @@ class _BalcaoScreenState extends State<BalcaoScreen> {
             }
 
             if (startupsSnapshot.hasError) {
-              return Center(child: Text('Erro ao carregar startups'));
+              return const Center(child: Text('Erro ao carregar startups'));
             }
 
             final startups = startupsSnapshot.data ?? [];
@@ -185,13 +229,13 @@ class _BalcaoScreenState extends State<BalcaoScreen> {
                 }
 
                 if (dashboardSnapshot.hasError) {
-                  return Center(child: Text('Erro ao carregar dados'));
+                  return const Center(child: Text('Erro ao carregar dados'));
                 }
 
                 final dashboard = dashboardSnapshot.data!;
 
                 return ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(13.0),
                   children: [
                     _BuyCard(
                       startups: startups,
@@ -199,9 +243,10 @@ class _BalcaoScreenState extends State<BalcaoScreen> {
                       onStartupChanged: _onBuyStartupSelected,
                       quantidadeController: _buyQuantidadeController,
                       precoController: _buyPrecoController,
+                      buyTotal: _buyTotal,
                       onPressed: _handleBuy,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
                     _SellCard(
                       startups: startups,
                       portfolios: dashboard.portfolios,
@@ -209,6 +254,7 @@ class _BalcaoScreenState extends State<BalcaoScreen> {
                       onStartupChanged: _onSellStartupSelected,
                       quantidadeController: _sellQuantidadeController,
                       precoController: _sellPrecoController,
+                      sellTotal: _sellTotal,
                       onPressed: _handleSell,
                     ),
                   ],

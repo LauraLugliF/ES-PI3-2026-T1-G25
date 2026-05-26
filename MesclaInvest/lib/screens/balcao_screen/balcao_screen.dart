@@ -1,4 +1,4 @@
-//Max Thomazini Barbosa RA:25003934
+// LUCAS RODRIGUES XAVIER - 25000508
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../repositories/exchange_repository.dart';

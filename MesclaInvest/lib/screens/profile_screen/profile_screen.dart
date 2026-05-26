@@ -1,12 +1,11 @@
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../widgets/app_bottom_navigation.dart';
 import '../../widgets/profile_widgets.dart';
 import '../../services/profile_service.dart';
-
-// Nota: esta versão do arquivo mantém apenas a parte visual.
-// TODO: reimplementar a lógica removida (Firebase auth, chamada de funções,
-// verificação de telefone, linking de credenciais, tratamento de erros).
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -21,12 +20,227 @@ class _ProfileScreenState extends State<ProfileScreen> {
     email: 'email@exemplo.com',
     phone: '(00) 00000-0000',
   );
-  // TODO: quando reimplementar, remover 'const' e popular com dados reais.
+  // TODO: quando reimplementar dados reais do perfil, substituir estes dados fixos.
+
+  bool _isMfaLoading = false;
+  String? _mfaMessage;
   
   void _onNavTap(int index) {
+    // Evita navegar durante o fluxo de MFA para não desmontar a tela no meio
+    // de callbacks/dialgos assíncronos.
+    if (_isMfaLoading) return;
     // Delegar navegação ao helper já existente.
     // TODO: ajustar comportamento se necessário ao restaurar lógica.
     handleBottomNavTap(context, currentIndex: 3, tappedIndex: index);
+  }
+
+  Future<String?> _askTextInput({
+    required String title,
+    required String label,
+    bool obscureText = false,
+    TextInputType keyboardType = TextInputType.text,
+  }) async {
+    if (!mounted) return null;
+
+    final controller = TextEditingController();
+
+    final value = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(title),
+          content: TextField(
+            controller: controller,
+            obscureText: obscureText,
+            keyboardType: keyboardType,
+            autofocus: true,
+            decoration: InputDecoration(labelText: label),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
+              child: const Text('Confirmar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    controller.dispose();
+    return value;
+  }
+
+  Future<void> _start2FAFlow() async {
+    if (_isMfaLoading) return;
+
+    setState(() {
+      _isMfaLoading = true;
+      _mfaMessage = null;
+    });
+
+    try {
+      final auth = FirebaseAuth.instance;
+      final user = auth.currentUser;
+
+      if (user == null) {
+        throw FirebaseAuthException(
+          code: 'user-not-logged-in',
+          message: 'Faça login novamente para cadastrar o segundo fator.',
+        );
+      }
+
+      final phoneNumber = await _askTextInput(
+        title: 'Cadastrar telefone MFA',
+        label: 'Telefone com DDI (ex.: +5511999999999)',
+        keyboardType: TextInputType.phone,
+      );
+
+      if (!mounted || phoneNumber == null || phoneNumber.isEmpty) {
+        return;
+      }
+
+      if (user.email == null || user.email!.isEmpty) {
+        throw FirebaseAuthException(
+          code: 'missing-email',
+          message: 'Conta sem e-mail para reautenticação. Faça login novamente.',
+        );
+      }
+
+      final password = await _askTextInput(
+        title: 'Confirme sua senha',
+        label: 'Senha atual da conta',
+        obscureText: true,
+      );
+
+      if (!mounted || password == null || password.isEmpty) {
+        return;
+      }
+
+      // Reautentica o usuário antes de operações sensíveis (enroll MFA).
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: password,
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      // Cria a sessão MFA e inicia a verificação de número de telefone.
+      final multiFactorSession = await user.multiFactor.getSession();
+      final completer = Completer<void>();
+
+      await auth.verifyPhoneNumber(
+        multiFactorSession: multiFactorSession,
+        phoneNumber: phoneNumber,
+        verificationCompleted: (PhoneAuthCredential phoneCredential) async {
+          try {
+            await user.multiFactor.enroll(
+              PhoneMultiFactorGenerator.getAssertion(phoneCredential),
+            );
+            if (!completer.isCompleted) completer.complete();
+          } catch (e) {
+            if (!completer.isCompleted) completer.completeError(e);
+          }
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          if (!completer.isCompleted) completer.completeError(e);
+        },
+        codeSent: (String verificationId, int? resendToken) async {
+          if (!mounted) {
+            if (!completer.isCompleted) {
+              completer.completeError(
+                FirebaseAuthException(
+                  code: 'profile-unmounted',
+                  message: 'Tela de perfil foi fechada durante o fluxo de MFA.',
+                ),
+              );
+            }
+            return;
+          }
+
+          try {
+            final smsCode = await _askTextInput(
+              title: 'Código SMS',
+              label: 'Digite o código recebido',
+              keyboardType: TextInputType.number,
+            );
+
+            if (smsCode == null || smsCode.isEmpty) {
+              if (!completer.isCompleted) {
+                completer.completeError(
+                  FirebaseAuthException(
+                    code: 'sms-code-empty',
+                    message: 'Código SMS não informado.',
+                  ),
+                );
+              }
+              return;
+            }
+
+            final smsCredential = PhoneAuthProvider.credential(
+              verificationId: verificationId,
+              smsCode: smsCode,
+            );
+
+            if (!mounted) {
+              if (!completer.isCompleted) {
+                completer.completeError(
+                  FirebaseAuthException(
+                    code: 'profile-unmounted',
+                    message: 'Tela de perfil foi fechada durante o fluxo de MFA.',
+                  ),
+                );
+              }
+              return;
+            }
+
+            await user.multiFactor.enroll(
+              PhoneMultiFactorGenerator.getAssertion(smsCredential),
+            );
+
+            if (!completer.isCompleted) completer.complete();
+          } catch (e) {
+            if (!completer.isCompleted) completer.completeError(e);
+          }
+        },
+        codeAutoRetrievalTimeout: (_) {
+          if (!completer.isCompleted) {
+            completer.completeError(
+              FirebaseAuthException(
+                code: 'sms-timeout',
+                message: 'Tempo para inserir o código expirou. Tente novamente.',
+              ),
+            );
+          }
+        },
+      );
+
+      await completer.future;
+
+      if (!mounted) return;
+      setState(() {
+        _mfaMessage = 'Autenticacao por SMS ativada com sucesso.';
+      });
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _mfaMessage = e.message ?? 'Nao foi possivel ativar o MFA.';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _mfaMessage = 'Ocorreu um erro inesperado ao ativar o MFA.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isMfaLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -56,7 +270,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // --- SEÇÃO DE 2FA ---
             const Text('Segurança', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            // Segurança: seção visual. Implementar lógica de 2FA abaixo.
+            // Segurança: permite cadastrar segundo fator por SMS no perfil.
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -65,14 +279,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    // Botão desabilitado (interface apenas).
-                    // TODO: implementar `_start2FAFlow()` e alterar `onPressed` para
-                    // `() => _start2FAFlow()` quando reativar a lógica.
-                    onPressed: null,
+                    onPressed: _isMfaLoading ? null : _start2FAFlow,
                     icon: const Icon(Icons.security),
-                    label: const Text('Ativar Autenticação por SMS'),
+                    label: _isMfaLoading
+                        ? const Text('Processando...')
+                        : const Text('Ativar Autenticacao por SMS'),
                   ),
                 ),
+                if (_mfaMessage != null) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    _mfaMessage!,
+                    style: TextStyle(
+                      color: _mfaMessage!.toLowerCase().contains('sucesso')
+                          ? Colors.green
+                          : Colors.red,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
               ],
             ),
 

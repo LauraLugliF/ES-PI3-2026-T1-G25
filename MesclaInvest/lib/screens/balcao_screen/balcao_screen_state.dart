@@ -18,6 +18,23 @@ class _BalcaoScreenState extends State<BalcaoScreen> {
   double _buyTotal = 0.0;
   double _sellTotal = 0.0;
 
+  bool _initializedWithArgs = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initializedWithArgs) {
+      final startupIdArg = ModalRoute.of(context)?.settings.arguments as String?;
+      if (startupIdArg != null) {
+        setState(() {
+          _selectedBuyStartupId = startupIdArg;
+        });
+        _loadBuyStartupPrice(startupIdArg);
+      }
+      _initializedWithArgs = true;
+    }
+  }
+
   @override
   void initState() {
     super.initState();

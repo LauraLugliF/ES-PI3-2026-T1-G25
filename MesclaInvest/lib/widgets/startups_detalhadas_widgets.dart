@@ -192,44 +192,34 @@ class StartupDetailHeader extends StatelessWidget {
               ),
             ],
           ),
-          // Espaço antes dos botões de investidor
+          // Espaço antes dos botões
           const SizedBox(height: 12),
 
-          // Botões de comprar, vender e ver balcão — só para investidores
-          if (isInvestidor)
-            Row(
-              children: [
-                // Botão comprar — preenchido com cor primária
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Comprar',
-                    filled: true,
-                    onPressed: onComprar,
-                  ),
+          // ajuste do xavier pra ir pro balcao:
+          // Botões de ver balcão (esquerda) e comprar (direita) visíveis para todos os usuários
+          Row(
+            children: [
+              // Botão ver balcão — fundo cinza
+              Expanded(
+                child: _ActionButton(
+                  label: 'Ver balcão',
+                  filled: false,
+                  isGray: true,
+                  onPressed: onBalcao,
                 ),
-                // Espaço entre botões
-                const SizedBox(width: 7),
-                // Botão vender — apenas borda
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Vender',
-                    filled: false,
-                    onPressed: onVender,
-                  ),
+              ),
+              // Espaço entre botões
+              const SizedBox(width: 7),
+              // Botão comprar — preenchido com cor primária
+              Expanded(
+                child: _ActionButton(
+                  label: 'Comprar',
+                  filled: true,
+                  onPressed: onComprar,
                 ),
-                // Espaço entre botões
-                const SizedBox(width: 7),
-                // Botão ver balcão — fundo cinza
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Ver balcão',
-                    filled: false,
-                    isGray: true,
-                    onPressed: onBalcao,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
+          ),
         ],
       ),
     );

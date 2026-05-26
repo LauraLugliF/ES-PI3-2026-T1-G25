@@ -226,9 +226,26 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
                   ((startup['capitalRaisedCents'] ?? 0) / 100)
                       .toDouble(),
                   isInvestidor: isInvestidor,
-                  onComprar: () {},
+                  onComprar: () {
+                    // ajuste do xavier pra ir pro balcao:
+                    // Ação para todos os usuários: ao clicar em "Comprar" no cabeçalho da startup,
+                    // redireciona para a tela do Balcão enviando o ID da startup atual.
+                    Navigator.pushNamed(
+                      context,
+                      '/balcao',
+                      arguments: startup['id'],
+                    );
+                  },
                   onVender: () {},
-                  onBalcao: () {},
+                  onBalcao: () {
+                    // ajuste do xavier pra ir pro balcao:
+                    // Ao clicar em "Ver balcão", redireciona para a tela do Balcão sem pré-selecionar
+                    // nenhuma startup específica (deixa os dados zerados/em branco).
+                    Navigator.pushNamed(
+                      context,
+                      '/balcao',
+                    );
+                  },
                 ),
                 StartupPerformanceChart(
                   precoAtual:

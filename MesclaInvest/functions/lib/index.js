@@ -14,12 +14,14 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addUser = void 0;
-const index_1 = require("./cadastro/index");
+exports.getUserPhoneNumber = exports.addUser = void 0;
+const index_1 = require("./users/index");
 Object.defineProperty(exports, "addUser", { enumerable: true, get: function () { return index_1.addUser; } });
 const firebase_functions_1 = require("firebase-functions");
 // Limita o número de instâncias para evitar excesso de concorrência nas functions.
 (0, firebase_functions_1.setGlobalOptions)({ maxInstances: 10 });
+var index_2 = require("./users/index");
+Object.defineProperty(exports, "getUserPhoneNumber", { enumerable: true, get: function () { return index_2.getUserPhoneNumber; } });
 // Reexporta todas as functions relacionadas ao módulo de startups.
 __exportStar(require("./startups"), exports);
 // Reexporta todas as functions relacionadas ao módulo de exchange.

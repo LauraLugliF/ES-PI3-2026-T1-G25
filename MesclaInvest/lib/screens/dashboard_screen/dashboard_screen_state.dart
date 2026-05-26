@@ -54,17 +54,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   portfolios: [],
                 );
 
-            return ListView(
+            return ListView.builder(
               padding: const EdgeInsets.all(16),
-              children: [
-                _TotalInvestmentCard(
-                  totalInvestido: dashboard.totalInvestidoEmReais,
-                  onBalcaoTap: () =>
-                      Navigator.pushNamed(context, '/balcao'),
-                ),
-                const SizedBox(height: 16),
-                _PortfoliosList(portfolios: dashboard.portfolios),
-              ],
+              itemCount: 2,
+              itemBuilder: (context, i) {
+                if (i == 0) {
+                  return _TotalInvestmentCard(
+                    totalInvestido: dashboard.totalInvestidoEmReais,
+                    onBalcaoTap: () => Navigator.pushNamed(context, '/balcao'),
+                  );
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: _PortfoliosList(portfolios: dashboard.portfolios),
+                );
+              },
             );
           },
         ),

@@ -22,4 +22,6 @@ const firebase_functions_1 = require("firebase-functions");
 (0, firebase_functions_1.setGlobalOptions)({ maxInstances: 10 });
 // Reexporta todas as functions relacionadas ao módulo de startups.
 __exportStar(require("./startups"), exports);
+// Reexporta todas as functions relacionadas ao módulo de exchange.
+__exportStar(require("./exchange"), exports);
 //# sourceMappingURL=index.js.map

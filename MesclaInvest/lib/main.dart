@@ -5,6 +5,10 @@ import 'screens/login_screen/login_screen.dart';
 import 'screens/cadastro/cadastro_screen.dart';
 import 'screens/forgotPassword_screen/forgotpassword_screen.dart';
 import 'screens/explore_startups_screen/explore_startups_screen.dart';
+import 'screens/wallet_screen/wallet_screen.dart';
+import 'screens/dashboard_screen/dashboard_screen.dart';
+import 'screens/balcao_screen/balcao_screen.dart';
+import 'screens/startups_detalhadas_screen/startups_detalhadas_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,9 +25,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'MesclaInvest',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2DBE9D),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2DBE9D)),
         scaffoldBackgroundColor: Colors.white,
         useMaterial3: true,
       ),
@@ -34,6 +36,13 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const CadastroFlowScreen(),
         '/forgotpassword': (context) => const ForgotPasswordScreen(),
         '/explore': (context) => const ExploreStartupsScreen(),
+        '/wallet': (context) => const WalletScreen(),
+        '/dashboard': (context) => const DashboardScreen(),
+        '/balcao': (context) => const BalcaoScreen(),
+        '/startup-detail': (context) {
+          final id = ModalRoute.of(context)!.settings.arguments as String;
+          return StartupDetailScreen(startupId: id);
+        },
       },
     );
   }

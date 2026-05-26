@@ -339,7 +339,7 @@ class ExploreStartupsList extends StatelessWidget {
                       child: Center(
                         child: Text(
                           startup.logoLabel,
-                          style: theme.textTheme.titleLarge?.copyWith(
+                          style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: theme.colorScheme.onPrimaryContainer,
                           ),

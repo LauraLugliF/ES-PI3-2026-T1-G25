@@ -18,6 +18,7 @@ export const addUser = onRequest(
     const cpf = request.body?.cpf;
     const email = request.body?.email;
     const telefone = request.body?.telefone;
+    const saldo = request.body?.saldo ?? 0;
 
     // Gerando o timestamp do servidor
     const createdAt = FieldValue.serverTimestamp();
@@ -35,6 +36,7 @@ export const addUser = onRequest(
       cpf: cpf || null,
       email: email || null,
       telefone: telefone || null,
+      saldo: Math.floor(Number(saldo)), // Garante que é um inteiro em centavos
       createdAt: createdAt,
     };
 

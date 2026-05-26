@@ -1,4 +1,4 @@
-// Max Thomazini Barbosa RA:25003934
+// Arthur Grizone Silvestre de Oliveira RA:25008341
 
 // Importa a autenticação do Firebase para usar o usuário logado.
 import 'package:firebase_auth/firebase_auth.dart';

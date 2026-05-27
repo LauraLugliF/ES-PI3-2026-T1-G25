@@ -6,6 +6,7 @@ import {
   StartupQuestionDocument,
 } from "../types";
 import {db} from "../shared/firebase";
+import {obterPortfolio} from "../../exchange/repositories/portfolioRepository";
 
 // Reutiliza a collection de startups do Firestore
 const startupsCollection = db.collection("startups");
@@ -55,14 +56,11 @@ export async function userIsInvestor(
   startupId: string,
   uid: string,
 ): Promise<boolean> {
-  // Busca o documento do investidor na subcoleção investors
-  const investorSnapshot = await startupsCollection
-    .doc(startupId)
-    .collection("investors")
-    .doc(uid)
-    .get();
-  // Retorna true se o documento existir, false caso contrário
-  return investorSnapshot.exists;
+  // Busca o portfólio do usuário para essa startup.
+  const portfolio = await obterPortfolio(uid, startupId);
+
+  // Só considera investidor se houver tokens comprados nessa startup.
+  return (portfolio?.quantidade ?? 0) > 0;
 }
 
 // Retorna as perguntas públicas da startup ordenadas pela mais recente

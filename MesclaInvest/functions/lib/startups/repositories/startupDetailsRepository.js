@@ -7,6 +7,7 @@ exports.listPublicQuestions = listPublicQuestions;
 exports.listPrivateQuestions = listPrivateQuestions;
 exports.createQuestion = createQuestion;
 const firebase_1 = require("../shared/firebase");
+const portfolioRepository_1 = require("../../exchange/repositories/portfolioRepository");
 // Reutiliza a collection de startups do Firestore
 const startupsCollection = firebase_1.db.collection("startups");
 // Converte documento completo em versão resumida para listagem
@@ -44,14 +45,11 @@ async function getStartupById(startupId) {
 }
 // Verifica se o usuário autenticado é investidor da startup informada
 async function userIsInvestor(startupId, uid) {
-    // Busca o documento do investidor na subcoleção investors
-    const investorSnapshot = await startupsCollection
-        .doc(startupId)
-        .collection("investors")
-        .doc(uid)
-        .get();
-    // Retorna true se o documento existir, false caso contrário
-    return investorSnapshot.exists;
+    var _a;
+    // Busca o portfólio do usuário para essa startup.
+    const portfolio = await (0, portfolioRepository_1.obterPortfolio)(uid, startupId);
+    // Só considera investidor se houver tokens comprados nessa startup.
+    return ((_a = portfolio === null || portfolio === void 0 ? void 0 : portfolio.quantidade) !== null && _a !== void 0 ? _a : 0) > 0;
 }
 // Retorna as perguntas públicas da startup ordenadas pela mais recente
 async function listPublicQuestions(startupId) {

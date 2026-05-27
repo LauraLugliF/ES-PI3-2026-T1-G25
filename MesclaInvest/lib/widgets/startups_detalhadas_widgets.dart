@@ -192,44 +192,35 @@ class StartupDetailHeader extends StatelessWidget {
               ),
             ],
           ),
-          // Espaço antes dos botões de investidor
+          // Espaço antes dos botões
           const SizedBox(height: 12),
 
-          // Botões de comprar, vender e ver balcão — só para investidores
-          if (isInvestidor)
-            Row(
-              children: [
-                // Botão comprar — preenchido com cor primária
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Comprar',
-                    filled: true,
-                    onPressed: onComprar,
-                  ),
+          // LUCAS RODRIGUES XAVIER - 25000508
+          // Montamos uma fileira com dois botões para todos os usuários:
+          // "Ver balcão" (cinza, para abrir a tela de negociação geral) e "Comprar" (verde, para negociar tokens desta startup)
+          Row(
+            children: [
+              // Botão ver balcão — fundo cinza
+              Expanded(
+                child: _ActionButton(
+                  label: 'Ver balcão',
+                  filled: false,
+                  isGray: true,
+                  onPressed: onBalcao,
                 ),
-                // Espaço entre botões
-                const SizedBox(width: 7),
-                // Botão vender — apenas borda
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Vender',
-                    filled: false,
-                    onPressed: onVender,
-                  ),
+              ),
+              // Espaço entre botões
+              const SizedBox(width: 7),
+              // Botão comprar — preenchido com cor primária
+              Expanded(
+                child: _ActionButton(
+                  label: 'Comprar',
+                  filled: true,
+                  onPressed: onComprar,
                 ),
-                // Espaço entre botões
-                const SizedBox(width: 7),
-                // Botão ver balcão — fundo cinza
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Ver balcão',
-                    filled: false,
-                    isGray: true,
-                    onPressed: onBalcao,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -759,21 +750,56 @@ class StartupConselhoSection extends StatelessWidget {
 
 // PERGUNTAS E RESPOSTAS
 // Exibe as perguntas públicas e o campo para enviar nova pergunta
-class StartupQASection extends StatelessWidget {
+class StartupQASection extends StatefulWidget {
   // Lista de perguntas e respostas públicas
   final List<Map<String, dynamic>> qaPublico;
+  // Lista de perguntas privadas (somente visíveis ao investidor/autor)
+  final List<Map<String, dynamic>> qaPrivado;
+  // Indica se o usuário atual é investidor (permite pergunta privada)
+  final bool isInvestidor;
   // Controlador do campo de nova pergunta
   final TextEditingController perguntaController;
-  // Ação de envio da pergunta
-  final VoidCallback onEnviar;
+  // Ação de envio da pergunta; recebe visibilidade ('publica'|'privada')
+  final Future<void> Function(String visibility) onEnviar;
 
   // Cria a seção de Q&A com os dados recebidos
   const StartupQASection({
     super.key,
     required this.qaPublico,
+    required this.qaPrivado,
+    required this.isInvestidor,
     required this.perguntaController,
     required this.onEnviar,
   });
+
+  @override
+  State<StartupQASection> createState() => _StartupQASectionState();
+}
+
+class _StartupQASectionState extends State<StartupQASection> {
+  String _selectedVisibility = 'publica';
+  bool _isSending = false;
+
+  Future<void> _handleSend() async {
+    if (_isSending) return;
+
+    final texto = widget.perguntaController.text.trim();
+    if (texto.isEmpty) return;
+
+    setState(() {
+      _isSending = true;
+    });
+
+    try {
+      await widget.onEnviar(_selectedVisibility);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSending = false;
+        });
+      }
+    }
+  }
 
   // Monta o card de perguntas e respostas
   @override
@@ -796,7 +822,7 @@ class StartupQASection extends StatelessWidget {
                 ),
               ),
               // Link ver todas — só aparece se houver mais de 1
-              if (qaPublico.length > 1)
+              if (widget.qaPublico.length > 1)
                 const Text(
                   'Ver todas',
                   style: TextStyle(
@@ -810,11 +836,91 @@ class StartupQASection extends StatelessWidget {
           // Espaço entre título e perguntas
           const SizedBox(height: 10),
 
-          // Exibe até 2 perguntas
-          ...qaPublico.take(2).map((qa) => _QAItem(qa: qa)),
+          // Exibe até 2 perguntas públicas
+          ...widget.qaPublico.take(2).map((qa) => _QAItem(qa: qa)),
 
           // Espaço antes do campo de nova pergunta
           const SizedBox(height: 10),
+
+          // Informa claramente quando o usuário não tem acesso às perguntas privadas.
+          if (!widget.isInvestidor) ...[
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE6E6E6), width: 0.5),
+              ),
+              child: const Text(
+                'Perguntas privadas ficam visíveis apenas para investidores com tokens comprados nesta startup.',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF666666),
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ] else ...[
+            // Mostra perguntas privadas se houver; caso contrário, deixa claro o estado vazio.
+            if (widget.qaPrivado.isNotEmpty) ...[
+              const Text(
+                'Perguntas privadas (suas)',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              ...widget.qaPrivado.map((qa) => _QAItem(qa: qa)),
+            ] else ...[
+              const Text(
+                'Perguntas privadas (suas)',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8F9FA),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE6E6E6), width: 0.5),
+                ),
+                child: const Text(
+                  'Você ainda não enviou perguntas privadas para esta startup.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF666666),
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 10),
+          ],
+
+          // Linha com seleção de visibilidade (apenas para investidores)
+          if (widget.isInvestidor) ...[
+            Row(
+              children: [
+                const Text('Visibilidade:'),
+                const SizedBox(width: 8),
+                DropdownButton<String>(
+                  value: _selectedVisibility,
+                  items: const [
+                    DropdownMenuItem(value: 'publica', child: Text('Pública')),
+                    DropdownMenuItem(value: 'privada', child: Text('Privada')),
+                  ],
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setState(() {
+                      _selectedVisibility = v;
+                    });
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
 
           // Linha com campo de texto e botão enviar
           Row(
@@ -823,7 +929,7 @@ class StartupQASection extends StatelessWidget {
               Expanded(
                 child: TextField(
                   // Liga o campo ao controlador recebido
-                  controller: perguntaController,
+                  controller: widget.perguntaController,
                   // Tamanho da fonte do campo
                   style: const TextStyle(fontSize: 12),
                   decoration: InputDecoration(
@@ -853,10 +959,12 @@ class StartupQASection extends StatelessWidget {
               // Botão de envio da pergunta
               ElevatedButton(
                 // Chama a ação de envio ao tocar
-                onPressed: onEnviar,
+                onPressed: _isSending ? null : _handleSend,
                 style: ElevatedButton.styleFrom(
                   // Cor de fundo do botão
-                  backgroundColor: kDetailPrimaryColor,
+                  backgroundColor: _isSending
+                      ? const Color(0xFF8BCDB3)
+                      : kDetailPrimaryColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(9),
                   ),
@@ -866,12 +974,26 @@ class StartupQASection extends StatelessWidget {
                   ),
                 ),
                 // Texto do botão
-                child: const Text(
-                  'Enviar',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  child: _isSending
+                      ? const SizedBox(
+                          key: ValueKey('sending'),
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Enviar',
+                          key: ValueKey('send-text'),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -1230,6 +1352,27 @@ class _QAItem extends StatelessWidget {
                   color: Color(0xFF555555),
                 ),
               ),
+              const SizedBox(width: 6),
+              // Ícone indicando visibilidade (pública/privada)
+              Builder(builder: (context) {
+                final visibility = qa['visibility'] as String? ?? 'publica';
+                if (visibility == 'privada') {
+                  return Row(
+                    children: const [
+                      Icon(Icons.lock_outline, size: 14, color: Color(0xFF777777)),
+                      SizedBox(width: 4),
+                      Text('Privada', style: TextStyle(fontSize: 10, color: Color(0xFF777777))),
+                    ],
+                  );
+                }
+                return Row(
+                  children: const [
+                    Icon(Icons.public, size: 14, color: Color(0xFF777777)),
+                    SizedBox(width: 4),
+                    Text('Pública', style: TextStyle(fontSize: 10, color: Color(0xFF777777))),
+                  ],
+                );
+              }),
             ],
           ),
           // Espaço entre autor e pergunta

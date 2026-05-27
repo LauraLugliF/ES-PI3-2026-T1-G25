@@ -9,7 +9,8 @@ const validation_1 = require("../shared/validation");
 const startupDetailsRepository_1 = require("../repositories/startupDetailsRepository");
 // Busca os dados completos de uma startup específica
 // Chamada pelo app com `id` da startup
-// Retorna sumário, sócios, conselho, vídeos, perguntas públicas e flags de acesso
+// Retorna sumário, sócios, conselho, vídeos, perguntas públicas,
+// perguntas privadas do investidor e flags de acesso
 exports.getStartupDetails = (0, https_1.onCall)(async (request) => {
     var _a, _b, _c, _d, _e, _f, _g, _h;
     // Verifica se o usuário está autenticado
@@ -29,7 +30,12 @@ exports.getStartupDetails = (0, https_1.onCall)(async (request) => {
     // Verifica se o usuário autenticado é investidor desta startup
     const isInvestor = await (0, startupDetailsRepository_1.userIsInvestor)(startupId, user.uid);
     // Busca as perguntas públicas da subcoleção de perguntas
-    const questions = await (0, startupDetailsRepository_1.listPublicQuestions)(startupId);
+    const publicQuestions = await (0, startupDetailsRepository_1.listPublicQuestions)(startupId);
+    // Busca as perguntas privadas apenas se o usuário for investidor
+    // Somente o próprio investidor vê suas perguntas privadas
+    const privateQuestions = isInvestor ?
+        await (0, startupDetailsRepository_1.listPrivateQuestions)(startupId, user.uid) :
+        [];
     // Retorna todos os dados da tela de detalhe para o app Flutter
     return {
         data: {
@@ -62,7 +68,9 @@ exports.getStartupDetails = (0, https_1.onCall)(async (request) => {
             // URL do plano de negócios em PDF
             pitchDeckUrl: (_d = startup.pitchDeckUrl) !== null && _d !== void 0 ? _d : null,
             // Perguntas e respostas públicas
-            publicQuestions: questions,
+            publicQuestions,
+            // Perguntas privadas do investidor logado — vazio para não investidores
+            privateQuestions,
             // Timestamps convertidos para ISO string
             createdAt: (_f = (_e = startup.createdAt) === null || _e === void 0 ? void 0 : _e.toDate().toISOString()) !== null && _f !== void 0 ? _f : null,
             updatedAt: (_h = (_g = startup.updatedAt) === null || _g === void 0 ? void 0 : _g.toDate().toISOString()) !== null && _h !== void 0 ? _h : null,

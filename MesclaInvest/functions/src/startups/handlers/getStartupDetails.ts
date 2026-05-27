@@ -6,12 +6,14 @@ import { normalizeString } from "../shared/validation";
 import {
   getStartupById,
   listPublicQuestions,
+  listPrivateQuestions,
   userIsInvestor,
 } from "../repositories/startupDetailsRepository";
 
 // Busca os dados completos de uma startup específica
 // Chamada pelo app com `id` da startup
-// Retorna sumário, sócios, conselho, vídeos, perguntas públicas e flags de acesso
+// Retorna sumário, sócios, conselho, vídeos, perguntas públicas,
+// perguntas privadas do investidor e flags de acesso
 export const getStartupDetails = onCall(async (request) => {
   // Verifica se o usuário está autenticado
   const user = requireAuthenticatedUser(request);
@@ -39,7 +41,13 @@ export const getStartupDetails = onCall(async (request) => {
   const isInvestor = await userIsInvestor(startupId, user.uid);
 
   // Busca as perguntas públicas da subcoleção de perguntas
-  const questions = await listPublicQuestions(startupId);
+  const publicQuestions = await listPublicQuestions(startupId);
+
+  // Busca as perguntas privadas apenas se o usuário for investidor
+  // Somente o próprio investidor vê suas perguntas privadas
+  const privateQuestions = isInvestor ?
+    await listPrivateQuestions(startupId, user.uid) :
+    [];
 
   // Retorna todos os dados da tela de detalhe para o app Flutter
   return {
@@ -72,7 +80,9 @@ export const getStartupDetails = onCall(async (request) => {
       // URL do plano de negócios em PDF
       pitchDeckUrl: startup.pitchDeckUrl ?? null,
       // Perguntas e respostas públicas
-      publicQuestions: questions,
+      publicQuestions,
+      // Perguntas privadas do investidor logado — vazio para não investidores
+      privateQuestions,
       // Timestamps convertidos para ISO string
       createdAt: startup.createdAt?.toDate().toISOString() ?? null,
       updatedAt: startup.updatedAt?.toDate().toISOString() ?? null,

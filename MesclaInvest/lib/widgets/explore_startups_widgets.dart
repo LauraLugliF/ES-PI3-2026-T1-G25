@@ -1,9 +1,11 @@
 // LUCAS RODRIGUES XAVIER - 25000508
 part of '../screens/explore_startups_screen/explore_startups_screen.dart';
 
+// Este é o cartão visual (card) de cada startup que aparece na nossa lista de exploração.
+// Ele mostra de forma resumida as principais informações da startup.
 class StartupListItem extends StatelessWidget {
   final StartupData startup;
-  final VoidCallback onTap;
+  final VoidCallback onTap; // O que acontece quando o usuário clica neste cartão
 
   const StartupListItem({super.key, required this.startup, required this.onTap});
 
@@ -11,7 +13,7 @@ class StartupListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return InkWell(
-      onTap: onTap,
+      onTap: onTap, // Navega para a tela de detalhes se for clicado
       borderRadius: BorderRadius.circular(16),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -22,9 +24,11 @@ class StartupListItem extends StatelessWidget {
         ),
         child: Column(
           children: [
+            // Primeira linha: A logomarca abreviada e o estágio da startup (ex: "Nova")
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // Logomarca: um quadradinho colorido contendo a inicial ou abreviação do nome
                 Container(
                   height: 60,
                   width: 60,
@@ -42,6 +46,7 @@ class StartupListItem extends StatelessWidget {
                     ),
                   ),
                 ),
+                // Badge/Crachá do estágio da startup (ex: "Em expansão", "Nova")
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -62,9 +67,11 @@ class StartupListItem extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
+            // Informações principais: Nome, Setor de atuação, e quantidade total de tokens
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Nome comercial da startup
                 Text(
                   startup.name,
                   style: theme.textTheme.titleMedium?.copyWith(
@@ -72,6 +79,7 @@ class StartupListItem extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
+                // Exemplo: "Tecnologia - Tokens: 1.5M"
                 Text(
                   "${startup.sector} - Tokens: ${startup.tokens}",
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -79,9 +87,11 @@ class StartupListItem extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
+                // Preço e seta indicativa de clique
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    // Preço formatado (ex: R$ 10,00)
                     Text(
                       startup.price,
                       style: theme.textTheme.titleMedium?.copyWith(

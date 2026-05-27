@@ -35,8 +35,11 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
     super.dispose();
   }
 
-  // Envia uma pergunta pública para a startup.
-  void _enviarPergunta(String startupId) async {
+  // Envia uma pergunta (pública ou privada) para a startup.
+  Future<void> _enviarPergunta(
+    String startupId, {
+    String visibility = 'publica',
+  }) async {
     // Lê o texto digitado removendo espaços.
     final texto = _perguntaController.text.trim();
 
@@ -48,6 +51,7 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
       await _repository.enviarPergunta(
         startupId: startupId,
         text: texto,
+        visibility: visibility,
       );
 
       // Limpa o campo após o envio.
@@ -57,10 +61,14 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
       if (!mounted) return;
       FocusScope.of(context).unfocus();
 
-      // Mostra confirmação visual para o usuário.
+      // Mostra confirmação visual para o usuário com detalhe da visibilidade.
+      final snackText = visibility == 'privada'
+          ? 'Pergunta enviada como privada. Visível somente para você e investidores.'
+          : 'Pergunta pública enviada com sucesso.';
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pergunta enviada com sucesso!'),
+        SnackBar(
+          content: Text(snackText),
           backgroundColor: kDetailPrimaryColor,
         ),
       );
@@ -185,12 +193,27 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
           })
               .toList();
 
-          // Monta a lista de perguntas e respostas públicas.
+          // Monta a lista de perguntas e respostas públicas e privadas,
+          // incluindo a visibilidade de cada pergunta para exibição correta.
           final qaPublico = (startup['publicQuestions'] as List? ?? [])
               .map((q) => {
+            'id': q['id'],
             'autor': q['authorEmail'] ?? 'Usuário',
             'pergunta': q['text'] ?? '',
             'resposta': q['answer'] ?? '',
+            'visibility': 'publica',
+            'createdAt': q['createdAt'],
+          })
+              .toList();
+
+          final qaPrivado = (startup['privateQuestions'] as List? ?? [])
+              .map((q) => {
+            'id': q['id'],
+            'autor': q['authorEmail'] ?? 'Você',
+            'pergunta': q['text'] ?? '',
+            'resposta': q['answer'] ?? '',
+            'visibility': 'privada',
+            'createdAt': q['createdAt'],
           })
               .toList();
 
@@ -226,9 +249,27 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
                   ((startup['capitalRaisedCents'] ?? 0) / 100)
                       .toDouble(),
                   isInvestidor: isInvestidor,
-                  onComprar: () {},
+                  onComprar: () {
+                    // LUCAS RODRIGUES XAVIER - 25000508
+                    // Quando o usuário clica no botão "Comprar", nós o enviamos diretamente
+                    // para a tela do Balcão de Tokens já levando o ID desta startup
+                    // para que ele não precise procurar ou preencher tudo do zero!
+                    Navigator.pushNamed(
+                      context,
+                      '/balcao',
+                      arguments: startup['id'],
+                    );
+                  },
                   onVender: () {},
-                  onBalcao: () {},
+                  onBalcao: () {
+                    // LUCAS RODRIGUES XAVIER - 25000508
+                    // Ao clicar em "Ver balcão", abrimos o balcão geral sem pré-selecionar nenhuma startup,
+                    // deixando o usuário livre para escolher qualquer uma da lista.
+                    Navigator.pushNamed(
+                      context,
+                      '/balcao',
+                    );
+                  },
                 ),
                 StartupPerformanceChart(
                   precoAtual:
@@ -246,10 +287,14 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
                   conselho: List<Map<String, dynamic>>.from(conselho),
                 ),
                 StartupQASection(
-                  qaPublico:
-                  List<Map<String, dynamic>>.from(qaPublico),
+                  qaPublico: List<Map<String, dynamic>>.from(qaPublico),
+                  qaPrivado: List<Map<String, dynamic>>.from(qaPrivado),
+                  isInvestidor: isInvestidor,
                   perguntaController: _perguntaController,
-                  onEnviar: () => _enviarPergunta(startup['id']),
+                  onEnviar: (visibility) => _enviarPergunta(
+                    startup['id'],
+                    visibility: visibility,
+                  ),
                 ),
                 StartupConteudosSection(
                   videosUrls: videosUrls,

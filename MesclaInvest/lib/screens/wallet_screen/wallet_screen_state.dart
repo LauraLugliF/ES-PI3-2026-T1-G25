@@ -133,52 +133,57 @@ class _WalletScreenState extends State<WalletScreen> {
     return Scaffold(
       // Barra superior da tela.
       appBar: AppBar(
-        // Título da tela.
-        title: const Text('Carteira'),
-
-        // Cor de fundo usando a cor primária do tema.
-        backgroundColor: theme.colorScheme.primary,
+        // Remover texto do título mantendo AppBar.
+        title: const SizedBox.shrink(),
+        // Remover barra colorida: usar fundo transparente e sem elevação.
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
 
       // Garante espaço seguro em áreas com notch, barra inferior etc.
       body: SafeArea(
-        // Centraliza o conteúdo na tela.
-        child: Center(
-          // Aguarda o saldo carregado de forma assíncrona.
-          child: FutureBuilder<double>(
-            // Future que alimenta o saldo.
-            future: _balanceFuture,
+        child: SizedBox.expand(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Aguarda o saldo carregado de forma assíncrona.
+              FutureBuilder<double>(
+                // Future que alimenta o saldo.
+                future: _balanceFuture,
 
-            // Constrói a UI conforme o estado do Future.
-            builder: (context, snapshot) {
-              // Enquanto carrega, mostra indicador.
-              if (snapshot.connectionState != ConnectionState.done) {
-                return const CircularProgressIndicator();
-              }
+                // Constrói a UI conforme o estado do Future.
+                builder: (context, snapshot) {
+                  // Enquanto carrega, mostra indicador.
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const CircularProgressIndicator();
+                  }
 
-              // Se deu erro, mostra mensagem simples.
-              if (snapshot.hasError) {
-                return const Text('Erro ao obter saldo');
-              }
+                  // Se deu erro, mostra mensagem simples.
+                  if (snapshot.hasError) {
+                    return const Text('Erro ao obter saldo');
+                  }
 
-              // Usa o saldo carregado, ou zero se vier nulo.
-              final value = snapshot.data ?? 0.0;
+                  // Usa o saldo carregado, ou zero se vier nulo.
+                  final value = snapshot.data ?? 0.0;
 
-              // Formata o saldo para moeda brasileira.
-              final formatted = _formatCurrencyBr(value);
+                  // Formata o saldo para moeda brasileira.
+                  final formatted = _formatCurrencyBr(value);
 
-              // Exibe o bloco visual com saldo e botão de depósito.
-              return _WalletBalanceContent(
-                // Passa o tema para o widget de saldo.
-                theme: theme,
+                  // Exibe o bloco visual com saldo e botão de depósito.
+                  return _WalletBalanceContent(
+                    // Passa o tema para o widget de saldo.
+                    theme: theme,
 
-                // Passa o saldo já formatado.
-                formattedBalance: formatted,
+                    // Passa o saldo já formatado.
+                    formattedBalance: formatted,
 
-                // Ação do botão Depositar.
-                onDepositPressed: _showDepositDialog,
-              );
-            },
+                    // Ação do botão Depositar.
+                    onDepositPressed: _showDepositDialog,
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),

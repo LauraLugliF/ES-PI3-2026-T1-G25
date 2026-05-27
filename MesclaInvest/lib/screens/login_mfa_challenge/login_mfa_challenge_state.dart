@@ -20,6 +20,15 @@ class _LoginMfaChallengePageState extends State<LoginMfaChallengePage> {
     return _phoneHints[_selectedHintIndex];
   }
 
+  String? get _selectedPhoneNumber {
+    final hint = _selectedHint;
+    final phoneNumber = hint?.phoneNumber.trim();
+    if (phoneNumber == null || phoneNumber.isEmpty) {
+      return null;
+    }
+    return phoneNumber;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +66,7 @@ class _LoginMfaChallengePageState extends State<LoginMfaChallengePage> {
     });
 
     try {
+      final phoneNumber = hint.phoneNumber.trim();
       await _service.sendSmsCode(
         resolver: widget.resolver,
         hint: hint,
@@ -64,7 +74,9 @@ class _LoginMfaChallengePageState extends State<LoginMfaChallengePage> {
           if (!mounted) return;
           setState(() {
             _verificationId = verificationId;
-            _message = 'Código enviado por SMS. Digite abaixo para concluir.';
+            _message = phoneNumber.isNotEmpty
+                ? 'SMS enviado para $phoneNumber. Digite abaixo para concluir.'
+                : 'SMS enviado para o número cadastrado. Digite abaixo para concluir.';
           });
         },
         onTimeout: (verificationId) {
@@ -187,6 +199,10 @@ class _LoginMfaChallengePageState extends State<LoginMfaChallengePage> {
               LoginMfaHeader(email: widget.email),
               const SizedBox(height: 24),
               const LoginMfaIntroCard(),
+              if (_selectedPhoneNumber != null) ...[
+                const SizedBox(height: 16),
+                LoginMfaDestinationCard(phoneNumber: _selectedPhoneNumber!),
+              ],
               const SizedBox(height: 20),
               LoginMfaHintList(
                 hints: _phoneHints,

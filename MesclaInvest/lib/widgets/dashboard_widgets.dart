@@ -21,10 +21,7 @@ class _TotalInvestmentCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Total investido',
-              style: theme.textTheme.titleMedium,
-            ),
+            Text('Total investido', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
               _formatCurrencyBr(totalInvestido),
@@ -57,10 +54,14 @@ class _TotalInvestmentCard extends StatelessWidget {
   }
 }
 
+// LUCAS RODRIGUES XAVIER - 25000508
+// Modificamos esta lista para aceitar a lista de startups carregadas do banco.
+// Assim, cruzamos o ID de investimento com a startup correta para exibir o nome amigável.
 class _PortfoliosList extends StatelessWidget {
   final List<dynamic> portfolios;
+  final List<Map<String, dynamic>> startups;
 
-  const _PortfoliosList({required this.portfolios});
+  const _PortfoliosList({required this.portfolios, required this.startups});
 
   @override
   Widget build(BuildContext context) {
@@ -69,10 +70,7 @@ class _PortfoliosList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Investimentos por startup',
-          style: theme.textTheme.titleMedium,
-        ),
+        Text('Investimentos por startup', style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
         if (portfolios.isEmpty)
           Card(
@@ -85,35 +83,60 @@ class _PortfoliosList extends StatelessWidget {
             ),
           )
         else
-          ...portfolios.map(
-            (portfolio) => _PortfolioCard(portfolio: portfolio),
-          ),
+          ...portfolios.map((portfolio) {
+            // LUCAS RODRIGUES XAVIER - 25000508
+            // Encontra os detalhes da startup correspondente a este investimento pelo ID
+            final startup = startups.firstWhere(
+              (s) => s['id'] == portfolio.startupId,
+              orElse: () => <String, dynamic>{},
+            );
+            return _PortfolioCard(portfolio: portfolio, startup: startup);
+          }),
       ],
     );
   }
 }
 
+// LUCAS RODRIGUES XAVIER - 25000508
+// Este é o cartão individual de investimentos por startup.
+// Tornamos ele clicável (InkWell) para direcionar o investidor para a tela de cotações e rendimentos (DetalhesTokenScreen).
 class _PortfolioCard extends StatelessWidget {
   final dynamic portfolio;
+  final Map<String, dynamic> startup;
 
-  const _PortfolioCard({required this.portfolio});
+  const _PortfolioCard({required this.portfolio, required this.startup});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // LUCAS RODRIGUES XAVIER - 25000508
+    // Tenta usar o nome real da startup carregado, caso contrário usa o ID técnico
+    final startupName = startup['name'] as String? ?? portfolio.startupId;
 
     return Card(
-      child: ListTile(
-        title: Text('Startup: ${portfolio.startupId}'),
-        subtitle: Text(
-          'Quantidade: ${portfolio.quantidade}\n'
-          'Preço médio: ${_formatCurrencyBr(portfolio.precoMedioCompraEmReais)}',
-        ),
-        isThreeLine: true,
-        trailing: Text(
-          _formatCurrencyBr(portfolio.totalInvestidoEmReais),
-          style: theme.textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w700,
+      child: InkWell(
+        onTap: () {
+          // LUCAS RODRIGUES XAVIER - 25000508
+          // Navega para a tela de Detalhes do Token passando as informações de investimento e startup
+          Navigator.pushNamed(
+            context,
+            '/detalhes-token',
+            arguments: {'portfolio': portfolio, 'startup': startup},
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: ListTile(
+          title: Text('Startup: $startupName'),
+          subtitle: Text(
+            'Quantidade: ${portfolio.quantidade}\n'
+            'Preço médio: ${_formatCurrencyBr(portfolio.precoMedioCompraEmReais)}',
+          ),
+          isThreeLine: true,
+          trailing: Text(
+            _formatCurrencyBr(portfolio.totalInvestidoEmReais),
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ),

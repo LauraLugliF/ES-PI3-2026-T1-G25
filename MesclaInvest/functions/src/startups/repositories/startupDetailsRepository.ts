@@ -4,6 +4,7 @@ import {
   StartupDocument,
   StartupListItem,
   StartupQuestionDocument,
+  StartupPriceHistoryPoint,
 } from "../types";
 import {db} from "../shared/firebase";
 import {obterPortfolio} from "../../exchange/repositories/portfolioRepository";
@@ -113,6 +114,24 @@ export async function listPrivateQuestions(startupId: string, uid: string) {
     .sort((left, right) =>
       String(right.createdAt ?? "").localeCompare(String(left.createdAt ?? "")),
     );
+}
+
+// Retorna o histórico de preço da startup ordenado do mais antigo para o mais recente.
+export async function listPriceHistory(startupId: string) {
+  const historySnapshot = await startupsCollection
+    .doc(startupId)
+    .collection("priceHistory")
+    .orderBy("createdAt", "asc")
+    .limit(200)
+    .get();
+
+  return historySnapshot.docs.map((doc) => ({
+    id: doc.id,
+    priceCents: Number(doc.get("priceCents") ?? 0),
+    changeType: (doc.get("changeType") ?? "seed") as StartupPriceHistoryPoint["changeType"],
+    quantity: Number(doc.get("quantity") ?? 0),
+    createdAt: doc.get("createdAt")?.toDate?.()?.toISOString?.() ?? null,
+  }));
 }
 
 // Salva uma nova pergunta na subcoleção de perguntas da startup

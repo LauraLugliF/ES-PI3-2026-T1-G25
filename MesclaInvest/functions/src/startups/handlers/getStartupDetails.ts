@@ -1,12 +1,13 @@
 // Laura Lugli Fonseca Pereira RA: 25000739
 // Handler que retorna os dados completos da tela de detalhes de uma startup
-import { HttpsError, onCall } from "firebase-functions/https";
-import { requireAuthenticatedUser } from "../shared/auth";
-import { normalizeString } from "../shared/validation";
+import {HttpsError, onCall} from "firebase-functions/https";
+import {requireAuthenticatedUser} from "../shared/auth";
+import {normalizeString} from "../shared/validation";
 import {
   getStartupById,
   listPublicQuestions,
   listPrivateQuestions,
+  listPriceHistory,
   userIsInvestor,
 } from "../repositories/startupDetailsRepository";
 
@@ -42,6 +43,9 @@ export const getStartupDetails = onCall(async (request) => {
 
   // Busca as perguntas públicas da subcoleção de perguntas
   const publicQuestions = await listPublicQuestions(startupId);
+
+  // Busca o histórico de preço para o gráfico da tela de detalhes
+  const priceHistory = await listPriceHistory(startupId);
 
   // Busca as perguntas privadas apenas se o usuário for investidor
   // Somente o próprio investidor vê suas perguntas privadas
@@ -81,6 +85,16 @@ export const getStartupDetails = onCall(async (request) => {
       pitchDeckUrl: startup.pitchDeckUrl ?? null,
       // Perguntas e respostas públicas
       publicQuestions,
+      // Histórico de preço para o gráfico de desempenho
+      priceHistory: priceHistory.length > 0 ? priceHistory : [
+        {
+          id: "seed-fallback",
+          priceCents: startup.currentTokenPriceCents,
+          changeType: "seed",
+          quantity: 0,
+          createdAt: startup.createdAt?.toDate().toISOString() ?? null,
+        },
+      ],
       // Perguntas privadas do investidor logado — vazio para não investidores
       privateQuestions,
       // Timestamps convertidos para ISO string

@@ -59,7 +59,7 @@ class LoginMfaIntroCard extends StatelessWidget {
           SizedBox(width: 16),
           Expanded(
             child: Text(
-              'Seu usuário possui MFA por SMS ativo. Escolha o número cadastrado e informe o código recebido para continuar.',
+              'Seu usuário possui MFA por SMS ativo. O código será enviado para o número cadastrado e você poderá informá-lo para continuar.',
               style: TextStyle(
                 fontSize: 14,
                 height: 1.4,
@@ -68,6 +68,35 @@ class LoginMfaIntroCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class LoginMfaDestinationCard extends StatelessWidget {
+  const LoginMfaDestinationCard({super.key, required this.phoneNumber});
+
+  final String phoneNumber;
+
+  @override
+  Widget build(BuildContext context) {
+    final displayNumber = phoneNumber.isNotEmpty ? phoneNumber : 'Número cadastrado';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F7F5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFD8E7E1)),
+      ),
+      child: Text(
+        'SMS enviado para $displayNumber',
+        style: const TextStyle(
+          fontSize: 14,
+          color: Color(0xFF1C1C1C),
+          height: 1.4,
+        ),
       ),
     );
   }

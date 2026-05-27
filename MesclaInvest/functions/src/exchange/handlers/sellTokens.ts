@@ -7,6 +7,7 @@ import {adicionarDeposito} from "../repositories/userRepository";
 import {obterStartup} from "../repositories/startupRepository";
 import {removerTokensDoPortfolio, obterPortfolio} from "../repositories/portfolioRepository";
 import {criarTransacao} from "../repositories/transactionRepository";
+import {atualizarStartupAposVenda} from "../../startups/repositories/startupRepository";
 
 export const sellTokensHandler = onRequest(
   {region: "southamerica-east1", invoker: "public"},
@@ -55,8 +56,8 @@ export const sellTokensHandler = onRequest(
         return;
       }
 
-      // Calcular o valor total
-      const precoTotal = Math.floor(quantidade * precoUnitario);
+      // Calcular o valor total em centavos para saldo e capital da startup.
+      const precoTotalCents = Math.floor(quantidade * precoUnitario * 100);
 
       // Remover tokens do portfólio
       const novoPortfolio = await removerTokensDoPortfolio(
@@ -65,8 +66,14 @@ export const sellTokensHandler = onRequest(
         quantidade,
       );
 
+      const startupAtualizada = await atualizarStartupAposVenda(
+        startupId,
+        quantidade,
+        precoTotalCents,
+      );
+
       // Adicionar saldo ao usuário
-      await adicionarDeposito(userId, precoTotal);
+      await adicionarDeposito(userId, precoTotalCents);
 
       // Registrar a transação
       const transacao = await criarTransacao(
@@ -81,6 +88,7 @@ export const sellTokensHandler = onRequest(
         sucesso: true,
         mensagem: "Venda realizada com sucesso",
         portfolio: novoPortfolio,
+        startup: startupAtualizada,
         transacao,
       });
     } catch (error) {

@@ -1,5 +1,5 @@
 // Max Thomazini Barbosa RA:25003934
-import { Timestamp, FieldValue } from "firebase-admin/firestore";
+import {Timestamp, FieldValue} from "firebase-admin/firestore";
 
 // Etapa atual da startup usada para classificar o estágio do negócio.
 export type StartupStage = "nova" | "em_operacao" | "em_expansao";
@@ -37,6 +37,14 @@ export type StartupDocument = {
   tags: string[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
+};
+
+// Ponto do histórico de preço usado pelo gráfico de desempenho.
+export type StartupPriceHistoryPoint = {
+  priceCents: number;
+  changeType: "seed" | "compra" | "venda";
+  quantity: number;
+  createdAt?: Timestamp | FieldValue;
 };
 
 // Define o nível de visibilidade de uma pergunta enviada à startup.

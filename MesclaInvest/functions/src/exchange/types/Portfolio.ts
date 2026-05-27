@@ -6,7 +6,8 @@ export type Portfolio = {
   userId: string; // UID do usuário proprietário
   startupId: string; // ID da startup
   quantidade: number; // Quantidade de tokens que o usuário possui
-  precoMedioCompra: number; // Preço médio pago por token (em centavos)
+  precoMedioCompra: number; // Preço médio pago por token (em reais)
   dataCompra: Date | unknown; // Data da primeira compra
   atualizadoEm?: Date | unknown; // Última atualização
 };
+

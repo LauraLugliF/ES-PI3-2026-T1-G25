@@ -1,8 +1,8 @@
 // Laura Lugli Fonseca Pereira RA: 25000739
 // Handler que retorna os dados completos da tela de detalhes de uma startup
-import {HttpsError, onCall} from "firebase-functions/https";
-import {requireAuthenticatedUser} from "../shared/auth";
-import {normalizeString} from "../shared/validation";
+import { HttpsError, onCall } from "firebase-functions/https";
+import { requireAuthenticatedUser } from "../shared/auth";
+import { normalizeString } from "../shared/validation";
 import {
   getStartupById,
   listPublicQuestions,

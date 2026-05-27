@@ -12,6 +12,7 @@ const portfolioRepository_1 = require("../../exchange/repositories/portfolioRepo
 const startupsCollection = firebase_1.db.collection("startups");
 // Converte documento completo em versão resumida para listagem
 function toListItem(id, startup) {
+    var _a;
     // Retorna apenas os campos necessários para a tela de catálogo
     return {
         id,
@@ -23,6 +24,7 @@ function toListItem(id, startup) {
         currentTokenPriceCents: startup.currentTokenPriceCents,
         coverImageUrl: startup.coverImageUrl,
         tags: startup.tags,
+        priceHistory: (_a = startup.priceHistory) !== null && _a !== void 0 ? _a : undefined,
     };
 }
 // Retorna lista resumida de todas as startups para a tela de catálogo

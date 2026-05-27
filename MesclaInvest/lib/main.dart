@@ -12,12 +12,12 @@ import 'screens/dashboard_screen/dashboard_screen.dart';
 import 'screens/balcao_screen/balcao_screen.dart';
 import 'screens/startups_detalhadas_screen/startups_detalhadas_screen.dart';
 import 'screens/profile_screen/profile_screen.dart';
+import 'screens/detalhes_token_screen/detalhes_token_screen.dart';
+import 'repositories/exchange_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -112,6 +112,14 @@ class MyApp extends StatelessWidget {
         '/startup-detail': (context) {
           final id = ModalRoute.of(context)!.settings.arguments as String;
           return StartupDetailScreen(startupId: id);
+        },
+        '/detalhes-token': (context) {
+          final args =
+              ModalRoute.of(context)!.settings.arguments
+                  as Map<String, dynamic>;
+          final portfolio = args['portfolio'] as TokenPortfolio;
+          final startup = args['startup'] as Map<String, dynamic>;
+          return DetalhesTokenScreen(portfolio: portfolio, startup: startup);
         },
       },
     );

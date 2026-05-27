@@ -3,6 +3,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../repositories/exchange_repository.dart';
+import '../../repositories/startup_repository.dart';
 import '../../widgets/app_bottom_navigation.dart';
 
 part 'dashboard_screen_state.dart';

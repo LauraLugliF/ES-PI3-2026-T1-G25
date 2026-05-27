@@ -1,5 +1,5 @@
 // Max Thomazini Barbosa RA:25003934
-import {Timestamp, FieldValue} from "firebase-admin/firestore";
+import { Timestamp, FieldValue } from "firebase-admin/firestore";
 
 // Etapa atual da startup usada para classificar o estágio do negócio.
 export type StartupStage = "nova" | "em_operacao" | "em_expansao";

@@ -4,7 +4,12 @@ part of 'dashboard_screen.dart';
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final ExchangeRepository _exchangeRepository = ExchangeRepository();
+  // LUCAS RODRIGUES XAVIER - 25000508
+  // Instanciamos o repositório de startups para buscar a lista de startups ativas
+  final StartupRepository _startupRepository = StartupRepository();
   late Future<UserInvestmentsDashboard> _dashboardFuture;
+  // Guardamos as informações brutas das startups para depois cruzarmos e exibirmos o nome real na tela
+  List<Map<String, dynamic>> _startups = [];
 
   @override
   void initState() {
@@ -18,7 +23,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
       throw Exception('Usuário não autenticado.');
     }
 
-    return _exchangeRepository.obterDashboardInvestimentos(user.uid);
+    final dashboard = await _exchangeRepository.obterDashboardInvestimentos(
+      user.uid,
+    );
+    try {
+      // LUCAS RODRIGUES XAVIER - 25000508
+      // Tenta carregar a lista de todas as startups do Firebase.
+      // Fazemos isso para descobrir o nome correto de cada startup em que o usuário investiu.
+      _startups = await _startupRepository.listarStartups();
+      debugPrint('Carregou ${_startups.length} startups.');
+      for (var s in _startups) {
+        debugPrint('Startup ID: ${s['id']} - Preço: ${s['currentTokenPriceCents']} centavos');
+      }
+    } catch (e) {
+      // LUCAS RODRIGUES XAVIER - 25000508
+      // Imprime o erro caso não consiga buscar as startups para ajudar a debugar
+      debugPrint('Erro ao carregar startups: $e');
+    }
+    return dashboard;
   }
 
   @override
@@ -66,7 +88,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 }
                 return Padding(
                   padding: const EdgeInsets.only(top: 16.0),
-                  child: _PortfoliosList(portfolios: dashboard.portfolios),
+                  child: _PortfoliosList(
+                    portfolios: dashboard.portfolios,
+                    startups: _startups,
+                  ),
                 );
               },
             );

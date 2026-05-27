@@ -1,4 +1,8 @@
 // LUCAS RODRIGUES XAVIER - 25000508
+// Esta é a "tela mestre" do Balcão de Negociações (Compra e Venda de Tokens).
+// Ela é a casca principal que carrega os estados e os formulários para os usuários
+// realizarem as transações de compra e venda diretamente na plataforma.
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../repositories/exchange_repository.dart';

@@ -195,8 +195,9 @@ class StartupDetailHeader extends StatelessWidget {
           // Espaço antes dos botões
           const SizedBox(height: 12),
 
-          // ajuste do xavier pra ir pro balcao:
-          // Botões de ver balcão (esquerda) e comprar (direita) visíveis para todos os usuários
+          // LUCAS RODRIGUES XAVIER - 25000508
+          // Montamos uma fileira com dois botões para todos os usuários:
+          // "Ver balcão" (cinza, para abrir a tela de negociação geral) e "Comprar" (verde, para negociar tokens desta startup)
           Row(
             children: [
               // Botão ver balcão — fundo cinza

@@ -227,9 +227,10 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
                       .toDouble(),
                   isInvestidor: isInvestidor,
                   onComprar: () {
-                    // ajuste do xavier pra ir pro balcao:
-                    // Ação para todos os usuários: ao clicar em "Comprar" no cabeçalho da startup,
-                    // redireciona para a tela do Balcão enviando o ID da startup atual.
+                    // LUCAS RODRIGUES XAVIER - 25000508
+                    // Quando o usuário clica no botão "Comprar", nós o enviamos diretamente
+                    // para a tela do Balcão de Tokens já levando o ID desta startup
+                    // para que ele não precise procurar ou preencher tudo do zero!
                     Navigator.pushNamed(
                       context,
                       '/balcao',
@@ -238,9 +239,9 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
                   },
                   onVender: () {},
                   onBalcao: () {
-                    // ajuste do xavier pra ir pro balcao:
-                    // Ao clicar em "Ver balcão", redireciona para a tela do Balcão sem pré-selecionar
-                    // nenhuma startup específica (deixa os dados zerados/em branco).
+                    // LUCAS RODRIGUES XAVIER - 25000508
+                    // Ao clicar em "Ver balcão", abrimos o balcão geral sem pré-selecionar nenhuma startup,
+                    // deixando o usuário livre para escolher qualquer uma da lista.
                     Navigator.pushNamed(
                       context,
                       '/balcao',

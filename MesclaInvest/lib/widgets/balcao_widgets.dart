@@ -2,10 +2,12 @@
 
 part of '../screens/balcao_screen/balcao_screen.dart';
 
+// Função auxiliar simples para formatar valores decimais como moeda Real (ex: 15.5 -> R$ 15,50)
 String _formatCurrency(double value) {
   return 'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}';
 }
 
+// Menu suspenso (dropdown) customizado para escolher a startup no formulário
 class _BalcaoDropdown<T> extends StatelessWidget {
   final T? value;
   final String hint;
@@ -43,6 +45,7 @@ class _BalcaoDropdown<T> extends StatelessWidget {
   }
 }
 
+// Campo de digitação básico (ex: para digitar a quantidade de tokens)
 class _BalcaoInputField extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
@@ -56,7 +59,7 @@ class _BalcaoInputField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true), // Abre teclado numérico
       style: const TextStyle(fontSize: 15, color: Color(0xFF222222), fontWeight: FontWeight.w500),
       decoration: InputDecoration(
         hintText: hintText,
@@ -70,13 +73,14 @@ class _BalcaoInputField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF1A9A6C), width: 2.0),
+          borderSide: const BorderSide(color: Color(0xFF1A9A6C), width: 2.0), // Borda verde ao focar
         ),
       ),
     );
   }
 }
 
+// Campo de digitação específico para preço, com o símbolo "R$" embutido
 class _BalcaoPriceInputField extends StatelessWidget {
   final TextEditingController controller;
 
@@ -119,6 +123,7 @@ class _BalcaoPriceInputField extends StatelessWidget {
   }
 }
 
+// Uma faixa cinza que exibe na hora o valor total da operação (quantidade x preço unitário)
 class _BalcaoTotalEstimationRow extends StatelessWidget {
   final double totalValue;
 
@@ -152,6 +157,7 @@ class _BalcaoTotalEstimationRow extends StatelessWidget {
   }
 }
 
+// Botão de ação (Comprar ou Vender) largo e destacado
 class _BalcaoActionButton extends StatelessWidget {
   final String label;
   final Color color;
@@ -186,6 +192,9 @@ class _BalcaoActionButton extends StatelessWidget {
   }
 }
 
+// ==========================================
+// CARD DE COMPRA
+// ==========================================
 class _BuyCard extends StatelessWidget {
   final List<Map<String, dynamic>> startups;
   final String? selectedStartupId;
@@ -207,6 +216,7 @@ class _BuyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Transforma a lista de startups crua em itens selecionáveis com o preço atual ao lado do nome
     final dropdownItems = startups.map((startup) {
       final priceInCents = startup['currentTokenPriceCents'] ?? 0;
       final priceInReais = priceInCents / 100.0;
@@ -245,7 +255,7 @@ class _BuyCard extends StatelessWidget {
                   color: const Color(0xFFE8F5EF),
                   borderRadius: BorderRadius.circular(9),
                 ),
-                child: const Icon(Icons.trending_up, color: Color(0xFF1A9A6C), size: 18),
+                child: const Icon(Icons.trending_up, color: Color(0xFF1A9A6C), size: 18), // Ícone verde subindo
               ),
               const SizedBox(width: 10),
               const Text(
@@ -255,6 +265,7 @@ class _BuyCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
+          // Seletor da startup
           _BalcaoDropdown<String>(
             value: selectedStartupId,
             hint: 'Selecione a startup',
@@ -269,17 +280,21 @@ class _BuyCard extends StatelessWidget {
             },
           ),
           const SizedBox(height: 8),
+          // Quantidade desejada
           _BalcaoInputField(
             controller: quantidadeController,
             hintText: 'Quantidade de tokens',
           ),
           const SizedBox(height: 8),
+          // Preço sugerido (que pode ser editado pelo usuário)
           _BalcaoPriceInputField(
             controller: precoController,
           ),
           const SizedBox(height: 8),
+          // Totalizador automático
           _BalcaoTotalEstimationRow(totalValue: buyTotal),
           const SizedBox(height: 8),
+          // Botão comprar
           _BalcaoActionButton(
             label: 'Comprar',
             color: const Color(0xFF1A9A6C),
@@ -292,6 +307,9 @@ class _BuyCard extends StatelessWidget {
   }
 }
 
+// ==========================================
+// CARD DE VENDA
+// ==========================================
 class _SellCard extends StatelessWidget {
   final List<Map<String, dynamic>> startups;
   final List<TokenPortfolio> portfolios;
@@ -315,7 +333,7 @@ class _SellCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Dropdown only shows startups where user owns tokens (tokens > 0)
+    // Na seção de venda, só mostramos as startups de onde o usuário realmente possui tokens
     final ownedPortfolios = portfolios.where((p) => p.quantidade > 0).toList();
     
     final dropdownItems = ownedPortfolios.map((p) {
@@ -339,6 +357,7 @@ class _SellCard extends StatelessWidget {
     double currentPrice = 0.0;
     int ownedTokens = 0;
 
+    // Se já selecionou a startup, calcula quantos tokens o usuário tem dela
     if (selectedStartupId != null) {
       selectedPortfolio = portfolios.firstWhere(
         (p) => p.startupId == selectedStartupId,
@@ -380,7 +399,7 @@ class _SellCard extends StatelessWidget {
                   color: const Color(0xFFFDECEA),
                   borderRadius: BorderRadius.circular(9),
                 ),
-                child: const Icon(Icons.trending_down, color: Color(0xFFD32F2F), size: 18),
+                child: const Icon(Icons.trending_down, color: Color(0xFFD32F2F), size: 18), // Ícone vermelho descendo
               ),
               const SizedBox(width: 10),
               const Text(
@@ -390,12 +409,14 @@ class _SellCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
+          // Seletor da startup
           _BalcaoDropdown<String>(
             value: selectedStartupId,
             hint: 'Selecione a startup',
             items: dropdownItems,
             onChanged: onStartupChanged,
           ),
+          // Mostra um aviso rosa com a quantidade de tokens em posse do usuário se ele selecionar alguma startup
           if (selectedStartupId != null) ...[
             Padding(
               padding: const EdgeInsets.only(top: 6.0, bottom: 6.0),
@@ -414,17 +435,21 @@ class _SellCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 8),
+          // Quantidade de tokens a vender
           _BalcaoInputField(
             controller: quantidadeController,
             hintText: 'Quantidade de tokens',
           ),
           const SizedBox(height: 8),
+          // Preço que ele deseja vender
           _BalcaoPriceInputField(
             controller: precoController,
           ),
           const SizedBox(height: 8),
+          // Total a receber estimado
           _BalcaoTotalEstimationRow(totalValue: sellTotal),
           const SizedBox(height: 8),
+          // Botão vender
           _BalcaoActionButton(
             label: 'Vender',
             color: const Color(0xFFD32F2F),

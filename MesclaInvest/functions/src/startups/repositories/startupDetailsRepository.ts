@@ -1,6 +1,5 @@
 // Laura Lugli Fonseca Pereira RA: 25000739
 // Repositório responsável pelas consultas da tela de detalhes da startup
-
 import {
   StartupDocument,
   StartupListItem,
@@ -73,6 +72,33 @@ export async function listPublicQuestions(startupId: string) {
     .doc(startupId)
     .collection("questions")
     .where("visibility", "==", "publica")
+    .limit(50)
+    .get();
+
+  // Mapeia os documentos para o formato esperado pelo app
+  return questionsSnapshot.docs
+    .map((doc) => ({
+      id: doc.id,
+      text: doc.get("text"),
+      answer: doc.get("answer") ?? null,
+      answeredAt: doc.get("answeredAt")?.toDate?.()?.toISOString?.() ?? null,
+      createdAt: doc.get("createdAt")?.toDate?.()?.toISOString?.() ?? null,
+    }))
+    // Ordena pela mais recente primeiro
+    .sort((left, right) =>
+      String(right.createdAt ?? "").localeCompare(String(left.createdAt ?? "")),
+    );
+}
+
+// Retorna as perguntas privadas do investidor logado ordenadas pela mais recente
+// Somente o próprio investidor pode ver suas perguntas privadas
+export async function listPrivateQuestions(startupId: string, uid: string) {
+  // Busca até 50 perguntas privadas do investidor logado
+  const questionsSnapshot = await startupsCollection
+    .doc(startupId)
+    .collection("questions")
+    .where("visibility", "==", "privada")
+    .where("authorUid", "==", uid)
     .limit(50)
     .get();
 

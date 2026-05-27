@@ -249,9 +249,27 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
                   ((startup['capitalRaisedCents'] ?? 0) / 100)
                       .toDouble(),
                   isInvestidor: isInvestidor,
-                  onComprar: () {},
+                  onComprar: () {
+                    // LUCAS RODRIGUES XAVIER - 25000508
+                    // Quando o usuário clica no botão "Comprar", nós o enviamos diretamente
+                    // para a tela do Balcão de Tokens já levando o ID desta startup
+                    // para que ele não precise procurar ou preencher tudo do zero!
+                    Navigator.pushNamed(
+                      context,
+                      '/balcao',
+                      arguments: startup['id'],
+                    );
+                  },
                   onVender: () {},
-                  onBalcao: () {},
+                  onBalcao: () {
+                    // LUCAS RODRIGUES XAVIER - 25000508
+                    // Ao clicar em "Ver balcão", abrimos o balcão geral sem pré-selecionar nenhuma startup,
+                    // deixando o usuário livre para escolher qualquer uma da lista.
+                    Navigator.pushNamed(
+                      context,
+                      '/balcao',
+                    );
+                  },
                 ),
                 StartupPerformanceChart(
                   precoAtual:

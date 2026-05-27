@@ -192,44 +192,35 @@ class StartupDetailHeader extends StatelessWidget {
               ),
             ],
           ),
-          // Espaço antes dos botões de investidor
+          // Espaço antes dos botões
           const SizedBox(height: 12),
 
-          // Botões de comprar, vender e ver balcão — só para investidores
-          if (isInvestidor)
-            Row(
-              children: [
-                // Botão comprar — preenchido com cor primária
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Comprar',
-                    filled: true,
-                    onPressed: onComprar,
-                  ),
+          // LUCAS RODRIGUES XAVIER - 25000508
+          // Montamos uma fileira com dois botões para todos os usuários:
+          // "Ver balcão" (cinza, para abrir a tela de negociação geral) e "Comprar" (verde, para negociar tokens desta startup)
+          Row(
+            children: [
+              // Botão ver balcão — fundo cinza
+              Expanded(
+                child: _ActionButton(
+                  label: 'Ver balcão',
+                  filled: false,
+                  isGray: true,
+                  onPressed: onBalcao,
                 ),
-                // Espaço entre botões
-                const SizedBox(width: 7),
-                // Botão vender — apenas borda
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Vender',
-                    filled: false,
-                    onPressed: onVender,
-                  ),
+              ),
+              // Espaço entre botões
+              const SizedBox(width: 7),
+              // Botão comprar — preenchido com cor primária
+              Expanded(
+                child: _ActionButton(
+                  label: 'Comprar',
+                  filled: true,
+                  onPressed: onComprar,
                 ),
-                // Espaço entre botões
-                const SizedBox(width: 7),
-                // Botão ver balcão — fundo cinza
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Ver balcão',
-                    filled: false,
-                    isGray: true,
-                    onPressed: onBalcao,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
+          ),
         ],
       ),
     );

@@ -39,7 +39,7 @@ class _WalletScreenState extends State<WalletScreen> {
   // Formata um número no padrão brasileiro de moeda.
   String _formatCurrencyBr(double value) {
     // Converte o valor em texto com 2 casas decimais.
-    final parts = value.toStringAsFixed(2).split(',');
+    final parts = value.toStringAsFixed(2).split('.');
 
     // Parte inteira do valor.
     final integerPart = parts[0];

@@ -19,13 +19,13 @@ class TokenPortfolio {
 
   factory TokenPortfolio.fromMap(Map<String, dynamic> map) {
     final quantidade = (map['quantidade'] as num?)?.toInt() ?? 0;
-    final precoMedioCompraEmCentavos =
+    final precoMedioCompraEmReais =
         (map['precoMedioCompra'] as num?)?.toDouble() ?? 0.0;
 
     return TokenPortfolio(
       startupId: map['startupId'] as String? ?? '-',
       quantidade: quantidade,
-      precoMedioCompraEmReais: precoMedioCompraEmCentavos / 100.0,
+      precoMedioCompraEmReais: precoMedioCompraEmReais,
     );
   }
 }

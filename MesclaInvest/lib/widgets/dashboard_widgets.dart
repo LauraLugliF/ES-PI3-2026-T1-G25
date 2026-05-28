@@ -5,7 +5,6 @@ part of '../screens/dashboard_screen/dashboard_screen.dart';
 // Cor primária do app usada nos widgets do dashboard
 const Color kDashPrimaryColor = Color(0xFF1A9A6C);
 
-// HEADER — saudação
 // Exibe o header com saudação ao usuário
 class DashboardHeader extends StatelessWidget {
   // Nome do usuário logado
@@ -17,38 +16,30 @@ class DashboardHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Área de textos de saudação
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          // Texto de boas-vindas
+          const Text(
+            'Bem-vindo de volta',
+            style: TextStyle(
+              fontSize: 12,
+              color: Color(0xFF888888),
+            ),
+          ),
+          // Nome do usuário com emoji
+          Row(
             children: [
-              const Text(
-                'Bem-vindo de volta',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF888888),
+              Text(
+                'Olá, $nomeUsuario!',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF111111),
                 ),
               ),
-
-              // Nome do usuário logado
-              Row(
-                children: [
-                  Text(
-                    'Olá, $nomeUsuario!',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF111111),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-
-                  // Emoji de saudação
-                  const Text('👋', style: TextStyle(fontSize: 20)),
-                ],
-              ),
+              const SizedBox(width: 6),
+              const Text('👋', style: TextStyle(fontSize: 20)),
             ],
           ),
         ],
@@ -57,12 +48,12 @@ class DashboardHeader extends StatelessWidget {
   }
 }
 
-
-// CARD DE SALDO
-// Exibe o card de saldo disponível com botões de ação
+// Exibe o card de saldo disponível com variação calculada e botões de ação
 class DashboardSaldoCard extends StatelessWidget {
   // Saldo disponível em reais
   final double saldo;
+  // Total investido em reais — usado para calcular a variação
+  final double totalInvestido;
   // Se o saldo está visível ou oculto
   final bool saldoVisivel;
   // Ação para alternar visibilidade do saldo
@@ -75,6 +66,7 @@ class DashboardSaldoCard extends StatelessWidget {
   const DashboardSaldoCard({
     super.key,
     required this.saldo,
+    required this.totalInvestido,
     required this.saldoVisivel,
     required this.onToggleSaldo,
     required this.onComprar,
@@ -84,6 +76,20 @@ class DashboardSaldoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Calcula a variação: saldo atual menos total investido
+    final variacao = saldo - totalInvestido;
+    // Calcula o percentual de variação
+    final variacaoPct =
+    totalInvestido > 0 ? (variacao / totalInvestido) * 100 : 0.0;
+    // Define se a variação é positiva
+    final positivo = variacao >= 0;
+    // Cor da variação
+    final corVariacao =
+    positivo ? kDashPrimaryColor : const Color(0xFFE53935);
+    // Cor do fundo do badge
+    final corFundoBadge =
+    positivo ? const Color(0xFFE8F5EF) : const Color(0xFFFFEBEE);
+
     return Container(
       margin: const EdgeInsets.fromLTRB(18, 16, 18, 0),
       padding: const EdgeInsets.all(18),
@@ -112,7 +118,7 @@ class DashboardSaldoCard extends StatelessWidget {
                   color: Color(0xFF888888),
                 ),
               ),
-              // Botão de olho para ocultar/mostrar saldo
+              // Botão para ocultar ou mostrar saldo
               GestureDetector(
                 onTap: onToggleSaldo,
                 child: Icon(
@@ -126,7 +132,7 @@ class DashboardSaldoCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          // Valor do saldo — oculto ou visível
+          // Valor do saldo oculto ou visível
           Text(
             saldoVisivel ? _formatCurrency(saldo) : 'R\$ ••••••',
             style: const TextStyle(
@@ -136,49 +142,42 @@ class DashboardSaldoCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          // Variação do dia
+          // Variação calculada dinamicamente
           Row(
             children: [
-              const Text(
-                '+ R\$ 304,25',
+              // Valor da variação em reais
+              Text(
+                '${positivo ? '+ ' : '- '}${_formatCurrency(variacao.abs())}',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: kDashPrimaryColor,
+                  color: corVariacao,
                 ),
               ),
               const SizedBox(width: 6),
-              // Badge de percentual
+              // Badge com percentual de variação
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 6,
                   vertical: 2,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5EF),
+                  color: corFundoBadge,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text(
-                  '+2,01%',
+                child: Text(
+                  '${positivo ? '+' : ''}${variacaoPct.toStringAsFixed(2)}%',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: kDashPrimaryColor,
+                    color: corVariacao,
                   ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              const Text(
-                'hoje',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Color(0xFFAAAAAA),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          // Botões de ação: Comprar, Vender, Ver balcão
+          // Botões de ação
           Row(
             children: [
               Expanded(
@@ -223,8 +222,7 @@ class DashboardSaldoCard extends StatelessWidget {
   }
 }
 
-// SEÇÃO DE INVESTIMENTOS
-// Exibe a seção "Meus investimentos" com filtros e lista de cards
+// Exibe a seção de meus investimentos com filtros e lista de cards
 class DashboardInvestimentos extends StatelessWidget {
   // Lista de portfólios do usuário
   final List<TokenPortfolio> portfolios;
@@ -234,8 +232,6 @@ class DashboardInvestimentos extends StatelessWidget {
   final String? filtroEstagio;
   // Callback para mudar o filtro
   final ValueChanged<String?> onFiltroChanged;
-  // Callback para ver todos
-  final VoidCallback onVerTodos;
   // Callback ao tocar num portfólio
   final Function(TokenPortfolio, Map<String, dynamic>) onPortfolioTap;
 
@@ -245,7 +241,6 @@ class DashboardInvestimentos extends StatelessWidget {
     required this.startups,
     required this.filtroEstagio,
     required this.onFiltroChanged,
-    required this.onVerTodos,
     required this.onPortfolioTap,
   });
 
@@ -256,19 +251,14 @@ class DashboardInvestimentos extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Linha com título da seção
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Meus investimentos',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF111111),
-                ),
-              ),
-            ],
+          // Título da seção
+          const Text(
+            'Meus investimentos',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF111111),
+            ),
           ),
           const SizedBox(height: 12),
           // Filtros de estágio em scroll horizontal
@@ -303,7 +293,7 @@ class DashboardInvestimentos extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          // Lista de cards ou mensagem vazia
+          // Lista de cards ou mensagem quando não há investimentos
           if (portfolios.isEmpty)
             Container(
               padding: const EdgeInsets.all(24),
@@ -340,8 +330,7 @@ class DashboardInvestimentos extends StatelessWidget {
   }
 }
 
-// CARD DE PORTFÓLIO ESTILIZADO
-// Exibe um card de investimento individual estilizado igual ao protótipo
+// Exibe um card de investimento individual estilizado
 class _PortfolioCardEstilizado extends StatelessWidget {
   final TokenPortfolio portfolio;
   final Map<String, dynamic> startup;
@@ -355,8 +344,9 @@ class _PortfolioCardEstilizado extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Dados da startup
+    // Nome da startup
     final nome = startup['name'] as String? ?? portfolio.startupId;
+    // Estágio da startup
     final estagio = startup['stage'] as String? ?? '';
     // Preço atual do token em reais
     final precoAtualCents =
@@ -440,7 +430,7 @@ class _PortfolioCardEstilizado extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      // Quantidade e preço médio
+                      // Quantidade de tokens e preço médio de compra
                       Text(
                         '${portfolio.quantidade} tokens · ${_fmt(portfolio.precoMedioCompraEmReais)}',
                         style: const TextStyle(
@@ -451,7 +441,7 @@ class _PortfolioCardEstilizado extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Coluna com variação e valor total
+                // Variação e valor total
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -464,7 +454,7 @@ class _PortfolioCardEstilizado extends StatelessWidget {
                         color: corVariacao,
                       ),
                     ),
-                    // Linha com percentual e seta
+                    // Percentual e seta
                     Row(
                       children: [
                         Text(
@@ -496,7 +486,7 @@ class _PortfolioCardEstilizado extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            // Mini gráfico de linha verde ou vermelho
+            // Mini gráfico verde ou vermelho conforme variação
             SizedBox(
               height: 32,
               child: CustomPaint(
@@ -545,7 +535,6 @@ class _PortfolioCardEstilizado extends StatelessWidget {
   }
 }
 
-// BADGE DE ESTÁGIO
 // Exibe o badge colorido com o estágio da startup
 class _EstagioBadge extends StatelessWidget {
   final String estagio;
@@ -593,7 +582,6 @@ class _EstagioBadge extends StatelessWidget {
   }
 }
 
-// FILTRO CHIP
 // Chip de filtro para selecionar estágio
 class _FiltroChip extends StatelessWidget {
   final String label;
@@ -633,8 +621,6 @@ class _FiltroChip extends StatelessWidget {
   }
 }
 
-
-// BOTÃO DE AÇÃO DO DASHBOARD
 // Botão de ação usado no card de saldo
 class _DashActionButton extends StatelessWidget {
   final String label;
@@ -687,18 +673,16 @@ class _DashActionButton extends StatelessWidget {
   }
 }
 
-
-// MINI GRÁFICO DE LINHA
-// Pinta o mini gráfico de linha no card de portfólio.
+// Pinta o mini gráfico de linha no card de portfólio
 class _MiniLinePainter extends CustomPainter {
-  // Se a variação é positiva ou negativa.
+  // Se a variação é positiva ou negativa
   final bool positivo;
 
   const _MiniLinePainter({required this.positivo});
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Cor verde para positivo, vermelho para negativo
+    // Cor verde para positivo e vermelho para negativo
     final color = positivo ? kDashPrimaryColor : const Color(0xFFE53935);
 
     final paint = Paint()
@@ -749,9 +733,7 @@ class _MiniLinePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-
-// WIDGETS LEGADOS
-// Card legado
+// Widgets legados mantidos para compatibilidade
 class _TotalInvestmentCard extends StatelessWidget {
   final double totalInvestido;
   final VoidCallback onBalcaoTap;
@@ -765,7 +747,6 @@ class _TotalInvestmentCard extends StatelessWidget {
   Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
-// Lista legada
 class _PortfoliosList extends StatelessWidget {
   final List<dynamic> portfolios;
   final List<Map<String, dynamic>> startups;

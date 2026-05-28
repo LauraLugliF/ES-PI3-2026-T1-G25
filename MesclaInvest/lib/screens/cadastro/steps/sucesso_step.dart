@@ -36,7 +36,16 @@ class SucessoStep extends StatelessWidget {
                       color: kDarkBlue,
                     ),
                   ),
-                  const SizedBox(height: 80),
+                  const SizedBox(height: 24),
+                  const Text(
+                    "Email de verificacao enviado, verifique antes de fazer login.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: kGreyText,
+                    ),
+                  ),
+                  const SizedBox(height: 56),
                   const Text(
                     "Entre para continuar",
                     style: TextStyle(fontSize: 12, color: kGreyText),

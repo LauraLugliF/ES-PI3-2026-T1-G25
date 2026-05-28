@@ -1,10 +1,12 @@
 // Max Thomazini Barbosa RA: 25003934
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-// Importa a função que faz o login no Firebase.
-import '../../services/login_auth.dart';
+// Importa o service de login com suporte a MFA.
+import '../../services/login_mfa_service.dart';
 // Importa os widgets reutilizáveis da tela de login.
 import '../../widgets/login_widgets.dart';
+import '../login_mfa_challenge/login_mfa_challenge.dart';
 // Liga este arquivo ao state separado.
 part 'login_screen_state.dart';
 

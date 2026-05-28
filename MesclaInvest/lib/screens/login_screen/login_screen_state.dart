@@ -11,6 +11,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   // Guarda a mensagem exibida após tentar entrar.
   String? _loginMessage;
+  bool _isSubmitting = false;
+  final LoginMfaService _loginService = LoginMfaService();
 
   // Diz se o botão pode ser usado.
   bool get _canSubmit {
@@ -59,6 +61,26 @@ class _LoginScreenState extends State<LoginScreen> {
       // Zera a mensagem de retorno.
       _loginMessage = null;
     });
+  }
+
+  String _mapAuthError(FirebaseAuthException e) {
+    if (e.code == 'user-not-found') {
+      return 'Nenhum usuário encontrado para este e-mail.';
+    } else if (e.code == 'wrong-password') {
+      return 'Senha incorreta.';
+    } else if (e.code == 'invalid-email') {
+      return 'E-mail inválido.';
+    } else if (e.code == 'invalid-credential') {
+      return 'Credenciais inválidas.';
+    } else if (e.code == 'too-many-requests') {
+      return 'Muitas tentativas. Tente novamente em instantes.';
+    } else if (e.code == 'network-request-failed') {
+      return 'Falha de conexão. Verifique a internet e tente novamente.';
+    } else if (e.code == 'no-app') {
+      return 'Firebase não configurado neste app.';
+    }
+
+    return e.message ?? 'Erro ao fazer login.';
   }
 
   // Monta a interface visual da tela.
@@ -141,30 +163,79 @@ class _LoginScreenState extends State<LoginScreen> {
               // Botão principal para executar o login.
               LoginPrimaryButton(
                 // Ativa o botão somente quando os dados parecem válidos.
-                onPressed: _canSubmit
+                onPressed: _canSubmit && !_isSubmitting
                     ? () async {
-                        // Envia o e-mail e a senha para a função de login.
-                        final message = await submitLogin(
-                          // Passa o texto atual do e-mail.
-                          _emailController.text,
-                          // Passa o texto atual da senha.
-                          _passwordController.text,
-                        );
+                        setState(() {
+                          _isSubmitting = true;
+                          _loginMessage = null;
+                        });
 
-                        // Evita atualizar a tela se ela já foi removida.
-                        if (!mounted) {
-                          return;
-                        }
+                        try {
+                          await _loginService.signInWithEmailAndPassword(
+                            email: _emailController.text,
+                            password: _passwordController.text,
+                          );
 
-                        if (message.startsWith('Login efetuado com sucesso')) {
-                          // Navega para a tela de exploração de startups em caso de sucesso.
+                          if (!mounted) {
+                            return;
+                          }
+
                           Navigator.pushReplacementNamed(context, '/explore');
-                        } else {
-                          // Atualiza a mensagem de erro exibida abaixo do botão.
+                        } on FirebaseAuthMultiFactorException catch (e) {
+                          if (!mounted) {
+                            return;
+                          }
+
+                          final completed = await Navigator.of(context).push<bool>(
+                            MaterialPageRoute(
+                              builder: (_) => LoginMfaChallengePage(
+                                resolver: e.resolver,
+                                email: _emailController.text.trim(),
+                              ),
+                            ),
+                          );
+
+                          if (!mounted) {
+                            return;
+                          }
+
+                          if (completed == true) {
+                            Navigator.pushReplacementNamed(context, '/explore');
+                          } else {
+                            setState(() {
+                              _loginMessage = e.message ?? 'Autenticacao multifator cancelada.';
+                            });
+                          }
+                        } on FirebaseAuthException catch (e) {
+                          if (!mounted) {
+                            return;
+                          }
+
                           setState(() {
-                            // Guarda a resposta de erro do login.
-                            _loginMessage = message;
+                            _loginMessage = _mapAuthError(e);
                           });
+                        } on FirebaseException catch (e) {
+                          if (!mounted) {
+                            return;
+                          }
+
+                          setState(() {
+                            _loginMessage = e.message ?? 'Erro de configuracao do Firebase.';
+                          });
+                        } catch (_) {
+                          if (!mounted) {
+                            return;
+                          }
+
+                          setState(() {
+                            _loginMessage = 'Ocorreu um erro inesperado ao fazer login.';
+                          });
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _isSubmitting = false;
+                            });
+                          }
                         }
                       }
                     // Desabilita o botão quando os dados estão incompletos.

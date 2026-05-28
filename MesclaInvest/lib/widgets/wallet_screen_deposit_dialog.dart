@@ -1,4 +1,4 @@
-// Max Thomazini Barbosa RA:25003934
+// Arthur Grizone Silvestre de Oliveira RA:25008341
 
 // Este arquivo faz parte de `wallet_screen.dart`.
 part of '../screens/wallet_screen/wallet_screen.dart';
@@ -10,7 +10,8 @@ class _DepositAmountDialog extends StatefulWidget {
 
   // Cria o State que controla o campo de texto do dialog.
   @override
-  State<_DepositAmountDialog> createState() => _DepositAmountDialogState();
+  State<_DepositAmountDialog> createState() =>
+      _DepositAmountDialogState();
 }
 
 // Estado interno do dialog de depósito.
@@ -18,93 +19,138 @@ class _DepositAmountDialogState extends State<_DepositAmountDialog> {
   // Controlador do campo de texto onde o usuário digita o valor.
   final TextEditingController _controller = TextEditingController();
 
-  // Libera recursos do controlador quando o widget é descartado.
+  // Libera recursos do controller quando o widget é descartado.
   @override
   void dispose() {
-    // Desfaz a associação do controller com o campo.
     _controller.dispose();
-
-    // Executa a limpeza da superclasse.
     super.dispose();
   }
 
   // Monta o conteúdo visual do dialog.
   @override
   Widget build(BuildContext context) {
-    // Retorna um AlertDialog padrão do Material.
-    return AlertDialog(
-      // Título do dialog.
-      title: const Text('Depositar'),
-
-      // Campo onde o usuário informa o valor.
-      content: TextField(
-        // Usa o controller para ler o que foi digitado.
-        controller: _controller,
-
-        // Abre teclado numérico com suporte a decimal.
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-
-        // Texto de apoio e prefixo de moeda.
-        decoration: const InputDecoration(
-          // Placeholder explicando o que digitar.
-          hintText: 'Digite o valor em R\$',
-
-          // Prefixo visual de moeda no campo.
-          prefixText: 'R\$ ',
-        ),
+    // Dialog customizado (mais flexível que AlertDialog).
+    return Dialog(
+      // Define bordas arredondadas do dialog.
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
       ),
 
-      // Ações do dialog: cancelar e confirmar depósito.
-      actions: [
-        // Botão para fechar o dialog sem enviar valor.
-        TextButton(
-          // Remove o dialog da árvore de navegação.
-          onPressed: () => Navigator.pop(context),
+      // Conteúdo interno do dialog.
+      child: Padding(
+        // Espaçamento interno geral do dialog.
+        padding: const EdgeInsets.all(24),
 
-          // Texto do botão.
-          child: const Text('Cancelar'),
+        // Layout vertical dos elementos do dialog.
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Título do dialog.
+            Text(
+              'Depositar',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+
+            // Espaço entre o título e o input.
+            const SizedBox(height: 20),
+
+            // Campo onde o usuário informa o valor.
+            TextField(
+              // Controla o texto digitado.
+              controller: _controller,
+
+              // Teclado numérico com suporte a decimal.
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+
+              // Estilização do campo de input.
+              decoration: InputDecoration(
+                // Texto de dica dentro do campo.
+                hintText: 'Digite o valor',
+
+                // Prefixo de moeda.
+                prefixText: 'R\$ ',
+
+                // Fundo cinza leve para destacar o input.
+                filled: true,
+                fillColor: Colors.grey.shade100,
+
+                // Borda arredondada sem linha visível.
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+
+            // Espaço entre input e botões.
+            const SizedBox(height: 24),
+
+            // Linha com os botões de ação.
+            Row(
+              children: [
+                // Botão cancelar ocupa metade do espaço.
+                Expanded(
+                  child: TextButton(
+                    // Fecha o dialog sem retornar valor.
+                    onPressed: () => Navigator.pop(context),
+
+                    // Texto do botão.
+                    child: const Text('Cancelar'),
+                  ),
+                ),
+
+                // Espaço entre os botões.
+                const SizedBox(width: 12),
+
+                // Botão de confirmação ocupa metade do espaço.
+                Expanded(
+                  child: ElevatedButton(
+                    // Valida e retorna o valor digitado.
+                    onPressed: () {
+                      // Remove espaços do input.
+                      final valor = _controller.text.trim();
+
+                      // Converte para número decimal.
+                      final valorDouble = double.tryParse(valor);
+
+                      // Valida se o valor é inválido.
+                      if (valorDouble == null || valorDouble <= 0) {
+                        // Mostra feedback de erro.
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Valor inválido'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      // Fecha o dialog retornando o valor válido.
+                      Navigator.pop(context, valorDouble);
+                    },
+
+                    // Estilo do botão de confirmação.
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1A9A6C),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+
+                    // Texto do botão.
+                    child: const Text('Depositar'),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
-
-        // Botão que valida o valor e devolve o resultado.
-        TextButton(
-          // Executa a validação quando o usuário confirma.
-          onPressed: () {
-            // Remove espaços e pega o texto digitado.
-            final valor = _controller.text.trim();
-
-            // Se estiver vazio, mostra aviso.
-            if (valor.isEmpty) {
-              // Exibe feedback visual para o usuário.
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Digite um valor válido')),
-              );
-
-              // Encerra a ação sem fechar o dialog.
-              return;
-            }
-
-            // Tenta converter o texto em número decimal.
-            final valorDouble = double.tryParse(valor);
-
-            // Se falhar ou for menor/igual a zero, avisa o usuário.
-            if (valorDouble == null || valorDouble <= 0) {
-              // Mostra mensagem de validação.
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Valor deve ser maior que zero')),
-              );
-
-              // Interrompe a confirmação.
-              return;
-            }
-
-            // Fecha o dialog retornando o valor digitado para a tela anterior.
-            Navigator.pop(context, valorDouble);
-          },
-
-          // Texto do botão de confirmação.
-          child: const Text('Depositar'),
-        ),
-      ],
+      ),
     );
   }
 }

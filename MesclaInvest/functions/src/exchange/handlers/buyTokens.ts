@@ -8,6 +8,7 @@ import {getUserBalance, deduzirSaldoUsuario} from "../repositories/userRepositor
 import {obterStartup} from "../repositories/startupRepository";
 import {adicionarTokensAoPortfolio} from "../repositories/portfolioRepository";
 import {criarTransacao} from "../repositories/transactionRepository";
+import {atualizarStartupAposCompra} from "../../startups/repositories/startupRepository";
 
 export const buyTokensHandler = onRequest(
   {region: "southamerica-east1", invoker: "public"},
@@ -41,18 +42,18 @@ export const buyTokensHandler = onRequest(
         return;
       }
 
-      // Calcular o valor total
-      const precoTotal = Math.floor(quantidade * precoUnitario);
+      // Calcular o valor total em centavos para saldo e capital da startup.
+      const precoTotalCents = Math.floor(quantidade * precoUnitario * 100);
 
       // Verificar se o usuário tem saldo suficiente
       const saldoDisponivel = await getUserBalance(userId);
-      if (saldoDisponivel === null || saldoDisponivel < precoTotal) {
+      if (saldoDisponivel === null || saldoDisponivel < precoTotalCents) {
         response.status(400).send("Saldo insuficiente para essa compra");
         return;
       }
 
       // Deduzir o saldo da conta do usuário
-      await deduzirSaldoUsuario(userId, precoTotal);
+      await deduzirSaldoUsuario(userId, precoTotalCents);
 
       // Adicionar tokens ao portfólio
       const portfolio = await adicionarTokensAoPortfolio(
@@ -60,6 +61,12 @@ export const buyTokensHandler = onRequest(
         startupId,
         quantidade,
         precoUnitario,
+      );
+
+      const startupAtualizada = await atualizarStartupAposCompra(
+        startupId,
+        quantidade,
+        precoTotalCents,
       );
 
       // Registrar a transação
@@ -75,6 +82,7 @@ export const buyTokensHandler = onRequest(
         sucesso: true,
         mensagem: "Compra realizada com sucesso",
         portfolio,
+        startup: startupAtualizada,
         transacao,
       });
     } catch (error) {
@@ -83,3 +91,4 @@ export const buyTokensHandler = onRequest(
     }
   },
 );
+

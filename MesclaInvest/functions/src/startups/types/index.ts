@@ -39,6 +39,14 @@ export type StartupDocument = {
   updatedAt?: Timestamp;
 };
 
+// Ponto do histórico de preço usado pelo gráfico de desempenho.
+export type StartupPriceHistoryPoint = {
+  priceCents: number;
+  changeType: "seed" | "compra" | "venda";
+  quantity: number;
+  createdAt?: Timestamp | FieldValue;
+};
+
 // Define o nível de visibilidade de uma pergunta enviada à startup.
 export type QuestionVisibility = "publica" | "privada";
 

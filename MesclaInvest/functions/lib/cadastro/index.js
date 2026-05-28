@@ -33,12 +33,14 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addUser = void 0;
+exports.getUserPhoneNumber = exports.addUser = void 0;
 const https_1 = require("firebase-functions/v2/https");
+const https_2 = require("firebase-functions/https");
 const logger = __importStar(require("firebase-functions/logger"));
 const app_1 = require("firebase-admin/app");
 // Adicionado o FieldValue na importação abaixo
 const firestore_1 = require("firebase-admin/firestore");
+const auth_1 = require("../startups/shared/auth");
 const app = (0, app_1.initializeApp)();
 const db = (0, firestore_1.getFirestore)(app, "projeto3");
 // Renomeado para fazer sentido com o objetivo
@@ -78,5 +80,29 @@ exports.addUser = (0, https_1.onRequest)({ region: "southamerica-east1", invoker
         logger.error("Erro ao cadastrar pessoa.", error);
         response.status(500).send("Erro interno ao cadastrar a pessoa.");
     }
+});
+exports.getUserPhoneNumber = (0, https_2.onCall)(async (request) => {
+    var _a, _b;
+    const user = (0, auth_1.requireAuthenticatedUser)(request);
+    let telefone = null;
+    const docSnap = await colPessoas.doc(user.uid).get();
+    if (docSnap.exists) {
+        telefone = (_a = docSnap.data()) === null || _a === void 0 ? void 0 : _a.telefone;
+    }
+    if ((typeof telefone !== "string" || telefone.trim().length === 0) && user.email) {
+        const emailSnap = await colPessoas
+            .where("email", "==", user.email)
+            .limit(1)
+            .get();
+        if (!emailSnap.empty) {
+            telefone = (_b = emailSnap.docs[0].data()) === null || _b === void 0 ? void 0 : _b.telefone;
+        }
+    }
+    if (typeof telefone !== "string" || telefone.trim().length === 0) {
+        throw new https_2.HttpsError("not-found", "Telefone nao encontrado para o usuario.");
+    }
+    return {
+        phoneNumber: telefone.trim(),
+    };
 });
 //# sourceMappingURL=index.js.map

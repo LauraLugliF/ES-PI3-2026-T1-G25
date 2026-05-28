@@ -13,32 +13,42 @@ class CadastroAuth {
   final UsuarioRepository _usuarioRepository = UsuarioRepository();
 
   Future<String> cadastrarUsuario(Usuario usuario) async {
-    try {
-      // Pede pro Google/Firebase: "Cria uma conta aí com esse email e essa senha"
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: usuario.email,
-        password: usuario.senha,
-      );
-      
-      // Pega a "identidade única" (um código cheio de letras) que o Firebase deu pra essa nova pessoa
-      final uid = userCredential.user!.uid;
+  try {
+    // 1. Cria a conta no Firebase Auth
+    UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      email: usuario.email,
+      password: usuario.senha,
+    );
 
+    User? firebaseUser = userCredential.user;
+
+    if (firebaseUser != null) {
+      // 2. Envia o e-mail de verificação imediatamente
+      await firebaseUser.sendEmailVerification();
+      print('E-mail de verificação enviado para: ${usuario.email}');
+
+      // 3. Pega o UID gerado
+      final uid = firebaseUser.uid;
+
+      // 4. Salva os dados complementares no seu repositório (Firestore)
       await _usuarioRepository.salvarUsuario(usuario: usuario, uid: uid);
       print('Documento salvo no Firestore com UID: $uid');
 
-      // Devolve o código da pessoa pra quem chamou essa função saber que deu tudo certo
+      // Retorna o UID para indicar sucesso
       return uid;
-      
-    } on FirebaseAuthException catch (e) {
-      // Se der um erro específico do Firebase (tipo email já existe, senha fraca...),
-      // transforma o erro numa mensagem que o usuário entenda (usando a função lá embaixo)
-      throw Exception(_handleAuthError(e.code));
-      
-    } catch (e) {
-      // Avisa que deu ruim removendo o termo 'Exception:' pra ficar mais bonito na tela
-      throw Exception(e.toString().replaceFirst('Exception: ', ''));
+    } else {
+      throw Exception("Erro ao obter informações do usuário recém-criado.");
     }
+
+  } on FirebaseAuthException catch (e) {
+    // Trata erros específicos do Firebase
+    throw Exception(_handleAuthError(e.code));
+    
+  } catch (e) {
+    // Trata erros genéricos
+    throw Exception(e.toString().replaceFirst('Exception: ', ''));
   }
+}
 
   // Uma listinha de traduções. Transforma os códigos feios do Firebase em texto bonito pra tela.
   String _handleAuthError(String code) {

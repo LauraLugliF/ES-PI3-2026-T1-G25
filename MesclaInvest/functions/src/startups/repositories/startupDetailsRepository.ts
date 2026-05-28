@@ -1,12 +1,13 @@
 // Laura Lugli Fonseca Pereira RA: 25000739
 // Repositório responsável pelas consultas da tela de detalhes da startup
-
 import {
   StartupDocument,
   StartupListItem,
   StartupQuestionDocument,
+  StartupPriceHistoryPoint,
 } from "../types";
 import {db} from "../shared/firebase";
+import {obterPortfolio} from "../../exchange/repositories/portfolioRepository";
 
 // Reutiliza a collection de startups do Firestore
 const startupsCollection = db.collection("startups");
@@ -56,14 +57,11 @@ export async function userIsInvestor(
   startupId: string,
   uid: string,
 ): Promise<boolean> {
-  // Busca o documento do investidor na subcoleção investors
-  const investorSnapshot = await startupsCollection
-    .doc(startupId)
-    .collection("investors")
-    .doc(uid)
-    .get();
-  // Retorna true se o documento existir, false caso contrário
-  return investorSnapshot.exists;
+  // Busca o portfólio do usuário para essa startup.
+  const portfolio = await obterPortfolio(uid, startupId);
+
+  // Só considera investidor se houver tokens comprados nessa startup.
+  return (portfolio?.quantidade ?? 0) > 0;
 }
 
 // Retorna as perguntas públicas da startup ordenadas pela mais recente
@@ -89,6 +87,51 @@ export async function listPublicQuestions(startupId: string) {
     .sort((left, right) =>
       String(right.createdAt ?? "").localeCompare(String(left.createdAt ?? "")),
     );
+}
+
+// Retorna as perguntas privadas do investidor logado ordenadas pela mais recente
+// Somente o próprio investidor pode ver suas perguntas privadas
+export async function listPrivateQuestions(startupId: string, uid: string) {
+  // Busca até 50 perguntas privadas do investidor logado
+  const questionsSnapshot = await startupsCollection
+    .doc(startupId)
+    .collection("questions")
+    .where("visibility", "==", "privada")
+    .where("authorUid", "==", uid)
+    .limit(50)
+    .get();
+
+  // Mapeia os documentos para o formato esperado pelo app
+  return questionsSnapshot.docs
+    .map((doc) => ({
+      id: doc.id,
+      text: doc.get("text"),
+      answer: doc.get("answer") ?? null,
+      answeredAt: doc.get("answeredAt")?.toDate?.()?.toISOString?.() ?? null,
+      createdAt: doc.get("createdAt")?.toDate?.()?.toISOString?.() ?? null,
+    }))
+    // Ordena pela mais recente primeiro
+    .sort((left, right) =>
+      String(right.createdAt ?? "").localeCompare(String(left.createdAt ?? "")),
+    );
+}
+
+// Retorna o histórico de preço da startup ordenado do mais antigo para o mais recente.
+export async function listPriceHistory(startupId: string) {
+  const historySnapshot = await startupsCollection
+    .doc(startupId)
+    .collection("priceHistory")
+    .orderBy("createdAt", "asc")
+    .limit(200)
+    .get();
+
+  return historySnapshot.docs.map((doc) => ({
+    id: doc.id,
+    priceCents: Number(doc.get("priceCents") ?? 0),
+    changeType: (doc.get("changeType") ?? "seed") as StartupPriceHistoryPoint["changeType"],
+    quantity: Number(doc.get("quantity") ?? 0),
+    createdAt: doc.get("createdAt")?.toDate?.()?.toISOString?.() ?? null,
+  }));
 }
 
 // Salva uma nova pergunta na subcoleção de perguntas da startup

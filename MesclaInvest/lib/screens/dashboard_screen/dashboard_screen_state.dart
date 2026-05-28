@@ -165,8 +165,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onPortfolioTap: (portfolio, startup) =>
                         Navigator.pushNamed(
                           context,
-                          '/startup-detail',
-                          arguments: {'startupId': portfolio.startupId},
+                          '/detalhes-token',
+                          arguments: {
+                            'portfolio': portfolio,
+                            'startup': startup,
+                          },
                         ),
                   ),
                 ],

@@ -35,6 +35,17 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
     super.dispose();
   }
 
+  // Recarrega os dados da startup para refletir preço e métricas atualizadas.
+  void _refreshStartup() {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _startupFuture = _repository.buscarDetalheStartup(widget.startupId);
+    });
+  }
+
   // Envia uma pergunta (pública ou privada) para a startup.
   Future<void> _enviarPergunta(
     String startupId, {
@@ -221,6 +232,11 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
           final videosUrls =
           List<String>.from(startup['demoVideos'] ?? []);
 
+            final priceHistory = (startup['priceHistory'] as List? ?? [])
+              .whereType<Map>()
+              .map((point) => Map<String, dynamic>.from(point))
+              .toList();
+
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(13, 12, 13, 20),
             child: Column(
@@ -251,16 +267,19 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
                   isInvestidor: isInvestidor,
                   onComprar: () {
                     // LUCAS RODRIGUES XAVIER - 25000508
-                    // Quando o usuário clica no botão "Comprar", nós o enviamos diretamente
-                    // para a tela do Balcão de Tokens já levando o ID desta startup
-                    // para que ele não precise procurar ou preencher tudo do zero!
+                    // Ao voltar do balcão, recarregamos os dados para atualizar o dashboard.
                     Navigator.pushNamed(
                       context,
                       '/balcao',
                       arguments: startup['id'],
-                    );
+                    ).then((_) => _refreshStartup());
                   },
-                  onVender: () {},
+                  onVender: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/balcao',
+                    ).then((_) => _refreshStartup());
+                  },
                   onBalcao: () {
                     // LUCAS RODRIGUES XAVIER - 25000508
                     // Ao clicar em "Ver balcão", abrimos o balcão geral sem pré-selecionar nenhuma startup,
@@ -268,13 +287,14 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
                     Navigator.pushNamed(
                       context,
                       '/balcao',
-                    );
+                    ).then((_) => _refreshStartup());
                   },
                 ),
                 StartupPerformanceChart(
                   precoAtual:
                   ((startup['currentTokenPriceCents'] ?? 0) / 100)
                       .toDouble(),
+                  priceHistory: priceHistory,
                 ),
                 StartupSummaryTab(
                   sumario: startup['executiveSummary'] ?? '',

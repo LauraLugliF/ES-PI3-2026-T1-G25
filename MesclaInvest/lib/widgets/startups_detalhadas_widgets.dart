@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 // Laura Lugli Fonseca Pereira RA: 25000739
 
 // Importa os widgets visuais do Flutter
@@ -164,30 +166,21 @@ class StartupDetailHeader extends StatelessWidget {
               _MetricCard(
                 label: 'Preço do token',
                 value: 'R\$ ${precoToken.toStringAsFixed(2)}',
-                sub: '${variacaoMes >= 0 ? '+' : ''}${variacaoMes.toStringAsFixed(1)}% no mês',
-                subColor: variacaoMes >= 0
-                    ? kDetailPrimaryColor
-                    : const Color(0xFFD32F2F),
-              ),
-              // Card dos tokens disponíveis
-              _MetricCard(
-                label: 'Tokens disponíveis',
-                value: _fmt(tokensDisponiveis),
-                sub: 'Total: ${_fmt(totalTokens)}',
+                sub: '',
                 subColor: const Color(0xFF999999),
               ),
-              // Card do percentual dos sócios
+              // Card dos tokens emitidos
               _MetricCard(
-                label: 'Sócios',
-                value: '${percentualSocios.toStringAsFixed(0)}%',
-                sub: 'Mercado: ${(100 - percentualSocios).toStringAsFixed(0)}%',
+                label: 'Tokens emitidos',
+                value: _fmt(tokensDisponiveis),
+                sub: '',
                 subColor: const Color(0xFF999999),
               ),
               // Card do capital já aportado
               _MetricCard(
                 label: 'Capital já aportado',
                 value: 'R\$ ${_fmtCapital(capitalAportado)}',
-                sub: '$pctMeta% da meta',
+                sub: '',
                 subColor: kDetailPrimaryColor,
               ),
             ],
@@ -235,9 +228,7 @@ class StartupDetailHeader extends StatelessWidget {
 
   // Formata capital em reais ex: 25000000 → "25M"
   String _fmtCapital(double v) {
-    if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(0)}M';
-    if (v >= 1000) return '${(v / 1000).toStringAsFixed(0)}K';
-    return v.toStringAsFixed(2);
+    return v.toStringAsFixed(2).replaceAll('.', ',');
   }
 }
 
@@ -301,9 +292,15 @@ class StartupStageBadge extends StatelessWidget {
 class StartupPerformanceChart extends StatefulWidget {
   // Preço atual do token para exibir no cabeçalho do gráfico
   final double precoAtual;
+  // Histórico de preço vindo do backend
+  final List<Map<String, dynamic>> priceHistory;
 
   // Cria o gráfico com o preço atual
-  const StartupPerformanceChart({super.key, required this.precoAtual});
+  const StartupPerformanceChart({
+    super.key,
+    required this.precoAtual,
+    required this.priceHistory,
+  });
 
   // Cria o state do gráfico
   @override
@@ -319,9 +316,332 @@ class _StartupPerformanceChartState extends State<StartupPerformanceChart> {
   // Opções de período disponíveis para filtro
   final List<String> _periodos = ['1D', '1S', '1M', '6M', 'YTD', 'Tudo'];
 
+  List<_ChartPoint> _parseHistoryPoints() {
+    final now = DateTime.now();
+
+    final points = widget.priceHistory.map((entry) {
+      final priceCents = (entry['priceCents'] as num?)?.toDouble() ?? 0.0;
+      final createdAtRaw = entry['createdAt'];
+      DateTime createdAt = now;
+
+      if (createdAtRaw is String && createdAtRaw.isNotEmpty) {
+        createdAt = DateTime.tryParse(createdAtRaw) ?? now;
+      }
+
+      return _ChartPoint(
+        price: priceCents / 100.0,
+        createdAt: createdAt,
+      );
+    }).toList()
+      ..sort((left, right) => left.createdAt.compareTo(right.createdAt));
+
+    return points;
+  }
+
+  List<_ChartPoint> _buildStepSeries(List<DateTime> buckets) {
+    final history = _historyForSelectedPeriod();
+    final now = DateTime.now();
+
+    if (buckets.isEmpty) {
+      return _normalizePoints([
+        _ChartPoint(price: widget.precoAtual, createdAt: now),
+      ]);
+    }
+
+    if (history.isEmpty) {
+      return _normalizePoints(
+        buckets
+            .map((bucket) => _ChartPoint(price: widget.precoAtual, createdAt: bucket))
+            .toList(),
+      );
+    }
+
+    final series = <_ChartPoint>[];
+    var historyIndex = 0;
+    var lastKnownPrice = history.first.price;
+
+    for (var i = 0; i < buckets.length; i++) {
+      final bucketStart = buckets[i];
+      final bucketEnd = i + 1 < buckets.length ? buckets[i + 1] : now.add(const Duration(seconds: 1));
+
+      while (historyIndex < history.length &&
+          !history[historyIndex].createdAt.isAfter(bucketEnd)) {
+        lastKnownPrice = history[historyIndex].price;
+        historyIndex++;
+      }
+
+      series.add(
+        _ChartPoint(
+          price: lastKnownPrice,
+          createdAt: bucketStart,
+        ),
+      );
+    }
+
+    return _normalizePoints(series);
+  }
+
+  List<DateTime> _periodBuckets() {
+    final now = DateTime.now();
+
+    switch (_periodo) {
+      case '1D':
+        final dayStart = DateTime(now.year, now.month, now.day);
+        return List.generate(24, (index) => dayStart.add(Duration(hours: index)));
+      case '1S':
+        final weekStart = DateTime(now.year, now.month, now.day).subtract(
+          Duration(days: now.weekday % 7),
+        );
+        return List.generate(7, (index) => weekStart.add(Duration(days: index)));
+      case '1M':
+        final monthStart = DateTime(now.year, now.month, 1);
+        return List.generate(4, (index) => monthStart.add(Duration(days: index * 7)));
+      case '6M':
+        final startMonth = DateTime(now.year, now.month - 6, 1);
+        return List.generate(7, (index) {
+          return DateTime(startMonth.year, startMonth.month + index, 1);
+        });
+      case 'YTD':
+        final startMonth = DateTime(now.year - 1, now.month, 1);
+        return List.generate(13, (index) {
+          return DateTime(startMonth.year, startMonth.month + index, 1);
+        });
+      case 'Tudo':
+        return _summaryBuckets();
+      default:
+        return [DateTime(now.year, now.month, now.day)];
+    }
+  }
+
+  List<DateTime> _summaryBuckets() {
+    final history = _parseHistoryPoints();
+    if (history.length <= 3) {
+      return history.map((point) => point.createdAt).toList();
+    }
+
+    return [
+      history.first.createdAt,
+      history[(history.length * 0.33).floor()].createdAt,
+      history[(history.length * 0.66).floor()].createdAt,
+      history.last.createdAt,
+    ];
+  }
+
+  List<_ChartPoint> _normalizePoints(List<_ChartPoint> points) {
+    if (points.isEmpty) {
+      return [
+        _ChartPoint(price: widget.precoAtual, createdAt: DateTime.now()),
+      ];
+    }
+
+    if (points.length == 1) {
+      return [
+        points.first,
+        _ChartPoint(
+          price: points.first.price,
+          createdAt: points.first.createdAt.add(const Duration(minutes: 1)),
+        ),
+      ];
+    }
+
+    return points;
+  }
+
+  List<_ChartPoint> _historyForSelectedPeriod() {
+    final history = _parseHistoryPoints();
+    final now = DateTime.now();
+
+    switch (_periodo) {
+      case '1D':
+        final start = DateTime(now.year, now.month, now.day);
+        final end = start.add(const Duration(days: 1));
+        return _filterHistoryInRange(history, start, end);
+      case '1S':
+        final start = DateTime(now.year, now.month, now.day).subtract(
+          Duration(days: now.weekday % 7),
+        );
+        final end = start.add(const Duration(days: 7));
+        return _filterHistoryInRange(history, start, end);
+      case '1M':
+        final start = DateTime(now.year, now.month, 1);
+        final end = DateTime(now.year, now.month + 1, 1);
+        return _filterHistoryInRange(history, start, end);
+      case '6M':
+        final start = DateTime(now.year, now.month - 6, 1);
+        return _filterHistoryInRange(history, start, now.add(const Duration(seconds: 1)));
+      case 'YTD':
+        final start = DateTime(now.year - 1, now.month, 1);
+        return _filterHistoryInRange(history, start, now.add(const Duration(seconds: 1)));
+      case 'Tudo':
+        return history;
+      default:
+        final start = DateTime(now.year, now.month, now.day);
+        final end = start.add(const Duration(days: 1));
+        return _filterHistoryInRange(history, start, end);
+    }
+  }
+
+  List<_ChartPoint> _filterHistoryInRange(
+    List<_ChartPoint> history,
+    DateTime start,
+    DateTime end,
+  ) {
+    final filtered = history
+        .where((point) =>
+            !point.createdAt.isBefore(start) && point.createdAt.isBefore(end))
+        .toList();
+
+    if (filtered.isNotEmpty) {
+      return filtered;
+    }
+
+    return [history.last];
+  }
+
+  List<_ChartPoint> _recentSliceFallback(List<_ChartPoint> points) {
+    if (points.length <= 2) {
+      return _normalizePoints(points);
+    }
+
+    final fallbackSizes = {
+      '1D': 2,
+      '1S': 3,
+      '1M': 5,
+      '6M': 8,
+      'YTD': 10,
+    };
+
+    final desiredSize = fallbackSizes[_periodo] ?? points.length;
+    final startIndex = (points.length - desiredSize).clamp(0, points.length - 1);
+    return _normalizePoints(points.sublist(startIndex));
+  }
+
+  String _weekdayLabel(int weekday) {
+    const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    return labels[weekday % 7];
+  }
+
+  String _formatDateLabel(DateTime value) {
+    const months = [
+      'Jan',
+      'Fev',
+      'Mar',
+      'Abr',
+      'Mai',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Set',
+      'Out',
+      'Nov',
+      'Dez',
+    ];
+    return '${value.day}/${months[value.month - 1]}';
+  }
+
+  String _monthLabel(int month) {
+    const months = [
+      'Jan',
+      'Fev',
+      'Mar',
+      'Abr',
+      'Mai',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Set',
+      'Out',
+      'Nov',
+      'Dez',
+    ];
+    return months[(month - 1).clamp(0, 11)];
+  }
+
+  String _weekOfMonthLabel(DateTime value) {
+    final weekOfMonth = ((value.day - 1) ~/ 7) + 1;
+    return 'Sem $weekOfMonth';
+  }
+
+  List<String> _chartDateLabels(List<_ChartPoint> points) {
+    if (points.isEmpty) return const ['-', '-', '-'];
+
+    final first = points.first.createdAt;
+    final middle = points[points.length ~/ 2].createdAt;
+    final last = points.last.createdAt;
+
+    switch (_periodo) {
+      case '1D':
+        return [
+          '${first.hour.toString().padLeft(2, '0')}h',
+          '${middle.hour.toString().padLeft(2, '0')}h',
+          '${last.hour.toString().padLeft(2, '0')}h',
+        ];
+      case '1S':
+        return [
+          _weekdayLabel(first.weekday),
+          _weekdayLabel(middle.weekday),
+          _weekdayLabel(last.weekday),
+        ];
+      case '1M':
+        return [
+          _weekOfMonthLabel(first),
+          _weekOfMonthLabel(middle),
+          _weekOfMonthLabel(last),
+        ];
+      case '6M':
+      case 'YTD':
+        return [
+          _monthLabel(first.month),
+          _monthLabel(middle.month),
+          _monthLabel(last.month),
+        ];
+      case 'Tudo':
+        return const ['Início', '', 'Atual'];
+      default:
+        return [
+          _formatDateLabel(first),
+          _formatDateLabel(middle),
+          _formatDateLabel(last),
+        ];
+    }
+  }
+
+  List<String> _chartPriceLabels(List<_ChartPoint> points) {
+    if (points.isEmpty) return const ['R\$ 0,00', 'R\$ 0,00', 'R\$ 0,00'];
+
+    final prices = points.map((point) => point.price).toList();
+    final minPrice = prices.reduce(math.min);
+    final maxPrice = prices.reduce(math.max);
+    final midPrice = (minPrice + maxPrice) / 2;
+
+    String format(double value) => 'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}';
+
+    switch (_periodo) {
+      case 'Tudo':
+        return [
+          format(maxPrice),
+          '',
+          format(minPrice),
+        ];
+      default:
+        return [
+          format(maxPrice),
+          format(midPrice),
+          format(minPrice),
+        ];
+    }
+  }
+
+  List<_ChartPoint> _filteredPoints() {
+    return _buildStepSeries(_periodBuckets());
+  }
+
   // Monta o card do gráfico com filtros
   @override
   Widget build(BuildContext context) {
+    final points = _filteredPoints();
+    final dateLabels = _chartDateLabels(points);
+
     return _DetailCard(
       child: Column(
         children: [
@@ -352,13 +672,47 @@ class _StartupPerformanceChartState extends State<StartupPerformanceChart> {
           // Espaço antes da linha do gráfico
           const SizedBox(height: 10),
 
-          // Área visual do gráfico com linha desenhada
+          // Área visual do gráfico com a linha e a grade horizontal
           SizedBox(
-            height: 56,
-            child: CustomPaint(
-              // Usa o pintor para desenhar a linha do gráfico
-              painter: _SimpleLinePainter(),
-              size: const Size(double.infinity, 56),
+            height: 114,
+            width: double.infinity,
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 92,
+                  width: double.infinity,
+                  child: points.length < 2
+                      ? const Center(
+                          child: Text(
+                            'Histórico insuficiente',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF888888)),
+                          ),
+                        )
+                      : CustomPaint(
+                          painter: _PriceHistoryPainter(
+                            points: points,
+                            lineColor: kDetailPrimaryColor,
+                          ),
+                          size: const Size(double.infinity, 92),
+                        ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: dateLabels
+                      .map(
+                        (label) => Text(
+                          label,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Color(0xFF888888),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
             ),
           ),
           // Espaço antes dos botões de período
@@ -1287,6 +1641,13 @@ class _TabButton extends StatelessWidget {
   }
 }
 
+class _ChartPoint {
+  const _ChartPoint({required this.price, required this.createdAt});
+
+  final double price;
+  final DateTime createdAt;
+}
+
 // Item individual de pergunta e resposta
 class _QAItem extends StatelessWidget {
   // Dados da pergunta e resposta
@@ -1484,65 +1845,184 @@ class _ConteudoItem extends StatelessWidget {
   }
 }
 
-// Pintor da linha do gráfico de desempenho
-class _SimpleLinePainter extends CustomPainter {
-  // Desenha a linha e o gradiente do gráfico
+// Pintor dinâmico da linha do gráfico de desempenho
+class _PriceHistoryPainter extends CustomPainter {
+  _PriceHistoryPainter({required this.points, required this.lineColor});
+
+  final List<_ChartPoint> points;
+  final Color lineColor;
+
+  String _formatCurrency(double value) {
+    return 'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}';
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
-    // Configuração da linha principal do gráfico
-    final paint = Paint()
-      ..color = kDetailPrimaryColor
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
+    if (points.isEmpty) {
+      return;
+    }
 
-    // Configuração do gradiente de preenchimento abaixo da linha
+    final values = points.map((point) => point.price).toList();
+    final minPrice = values.reduce(math.min);
+    final maxPrice = values.reduce(math.max);
+    final priceRange = (maxPrice - minPrice).abs();
+
+    final linePaint = Paint()
+      ..color = lineColor
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final gridPaint = Paint()
+      ..color = const Color(0xFFE8E8E8)
+      ..strokeWidth = 0.8;
+
+    final axisPaint = Paint()
+      ..color = const Color(0xFFD8D8D8)
+      ..strokeWidth = 1.1;
+
+    const leftPadding = 8.0;
+    const rightPadding = 8.0;
+    const topPadding = 8.0;
+    const bottomPadding = 10.0;
+    final chartWidth = math.max(1.0, size.width - leftPadding - rightPadding);
+    final chartHeight = math.max(1.0, size.height - topPadding - bottomPadding);
+
+    for (var i = 0; i < 3; i++) {
+      final y = topPadding + (chartHeight * i / 2);
+      canvas.drawLine(
+        Offset(leftPadding, y),
+        Offset(size.width - rightPadding, y),
+        i == 2 ? axisPaint : gridPaint,
+      );
+    }
+
     final fillPaint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          kDetailPrimaryColor.withValues(alpha: 0.15),
-          kDetailPrimaryColor.withValues(alpha: 0.01),
+          lineColor.withValues(alpha: 0.18),
+          lineColor.withValues(alpha: 0.02),
         ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..style = PaintingStyle.fill;
 
-    // Pontos normalizados que formam a linha do gráfico
-    final pontos = [0.83, 0.69, 0.76, 0.52, 0.38, 0.45, 0.24, 0.10];
-
-    // Caminhos da linha e do preenchimento
     final path = Path();
     final fillPath = Path();
+    final horizontalPadding = leftPadding;
+    final usableWidth = chartWidth;
+    final usableHeight = math.max(1.0, chartHeight);
+    final pointSpacingDivisor = math.max(1, points.length - 1);
 
-    // Percorre os pontos para construir os caminhos
-    for (int i = 0; i < pontos.length; i++) {
-      // Posição horizontal proporcional à largura
-      final x = size.width * i / (pontos.length - 1);
-      // Posição vertical proporcional à altura
-      final y = size.height * pontos[i];
+    for (var index = 0; index < points.length; index++) {
+      final x = horizontalPadding + (usableWidth * index / pointSpacingDivisor);
+      final normalized = priceRange == 0
+          ? 0.5
+          : (points[index].price - minPrice) / priceRange;
+      final y = topPadding + (usableHeight * (1 - normalized));
 
-      if (i == 0) {
-        // Move para o primeiro ponto
+      if (index == 0) {
         path.moveTo(x, y);
         fillPath.moveTo(x, y);
       } else {
-        // Traça linha até o próximo ponto
         path.lineTo(x, y);
         fillPath.lineTo(x, y);
       }
     }
 
-    // Fecha o caminho de preenchimento pela base
-    fillPath.lineTo(size.width, size.height);
-    fillPath.lineTo(0, size.height);
+    fillPath.lineTo(size.width - rightPadding, size.height - bottomPadding);
+    fillPath.lineTo(horizontalPadding, size.height - bottomPadding);
     fillPath.close();
 
-    // Desenha o preenchimento e a linha no canvas
     canvas.drawPath(fillPath, fillPaint);
-    canvas.drawPath(path, paint);
+    canvas.drawPath(path, linePaint);
+
+    for (var index = 0; index < points.length; index++) {
+      final point = points[index];
+      final x = horizontalPadding +
+          (usableWidth * index / pointSpacingDivisor);
+      final normalized = priceRange == 0
+          ? 0.5
+          : (point.price - minPrice) / priceRange;
+      final y = topPadding + (usableHeight * (1 - normalized));
+      canvas.drawCircle(
+        Offset(x, y),
+        2.2,
+        Paint()..color = lineColor,
+      );
+
+      final isChangePoint = index == 0 || point.price != points[index - 1].price;
+      if (!isChangePoint) {
+        continue;
+      }
+
+      final label = _formatCurrency(point.price);
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: const TextStyle(
+            color: kDetailPrimaryColor,
+            fontSize: 8.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+      )..layout(maxWidth: 72);
+
+      const labelHorizontalPadding = 4.0;
+      const labelVerticalPadding = 2.5;
+      final labelWidth = textPainter.width + (labelHorizontalPadding * 2);
+      final labelHeight = textPainter.height + (labelVerticalPadding * 2);
+      final labelLeft = (x - labelWidth / 2)
+          .clamp(4.0, size.width - labelWidth - 4.0)
+          .toDouble();
+      final placeAbove = y > size.height / 2;
+      final topCandidate = placeAbove
+          ? y - labelHeight - 12.0
+          : y + 12.0;
+      final labelTop = topCandidate
+          .clamp(4.0, size.height - labelHeight - 4.0)
+          .toDouble();
+
+      final pointerPath = Path()
+        ..moveTo(x, y)
+        ..lineTo(x, placeAbove ? labelTop + labelHeight : labelTop);
+
+      final labelRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(labelLeft, labelTop, labelWidth, labelHeight),
+        const Radius.circular(8),
+      );
+
+      final labelPaint = Paint()
+        ..color = const Color(0xFFF8FCFA)
+        ..style = PaintingStyle.fill;
+
+      final labelBorderPaint = Paint()
+        ..color = lineColor.withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0;
+
+      final pointerPaint = Paint()
+        ..color = lineColor.withValues(alpha: 0.45)
+        ..strokeWidth = 0.9
+        ..style = PaintingStyle.stroke;
+
+      canvas.drawPath(pointerPath, pointerPaint);
+
+      canvas.drawRRect(labelRect, labelPaint);
+      canvas.drawRRect(labelRect, labelBorderPaint);
+      textPainter.paint(
+        canvas,
+        Offset(labelLeft + labelHorizontalPadding, labelTop + labelVerticalPadding),
+      );
+    }
   }
 
-  // Não precisa redesenhar pois os dados não mudam
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _PriceHistoryPainter oldDelegate) {
+    return oldDelegate.points != points || oldDelegate.lineColor != lineColor;
+  }
 }

@@ -3,6 +3,8 @@
 // Ela é a casca principal que carrega os estados e os formulários para os usuários
 // realizarem as transações de compra e venda diretamente na plataforma.
 
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../repositories/exchange_repository.dart';

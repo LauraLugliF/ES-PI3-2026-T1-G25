@@ -40,6 +40,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _saldoFuture = _fetchSaldo();
   }
 
+  // Recarrega o dashboard e o saldo após uma compra ou venda
+  void _refresh() {
+    if (!mounted) return;
+    setState(() {
+      _dashboardFuture = _fetchDashboard();
+      _saldoFuture = _fetchSaldo();
+    });
+  }
+
   // Busca o dashboard e o histórico de preço de cada startup do portfólio
   Future<UserInvestmentsDashboard> _fetchDashboard() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -104,8 +113,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       // Executa todas as buscas em paralelo
       await Future.wait(
-        dashboard.portfolios
-            .map((p) => buscarHistorico(p.startupId)),
+        dashboard.portfolios.map((p) => buscarHistorico(p.startupId)),
       );
 
       if (mounted) {
@@ -185,12 +193,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         totalInvestido: dashboard.totalInvestidoEmReais,
                         saldoVisivel: _saldoVisivel,
                         onToggleSaldo: _toggleSaldo,
-                        onComprar: () =>
-                            Navigator.pushNamed(context, '/comprar'),
-                        onVender: () =>
-                            Navigator.pushNamed(context, '/vender'),
-                        onBalcao: () =>
-                            Navigator.pushNamed(context, '/balcao'),
+                        // Ao voltar do balcão recarrega o dashboard
+                        onComprar: () => Navigator.pushNamed(
+                          context,
+                          '/balcao',
+                        ).then((_) => _refresh()),
+                        onVender: () => Navigator.pushNamed(
+                          context,
+                          '/balcao',
+                        ).then((_) => _refresh()),
+                        onBalcao: () => Navigator.pushNamed(
+                          context,
+                          '/balcao',
+                        ).then((_) => _refresh()),
                       );
                     },
                   ),
@@ -202,12 +217,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     priceHistoryMap: _priceHistoryMap,
                     filtroEstagio: _filtroEstagio,
                     onFiltroChanged: _setFiltro,
+                    // Ao voltar da tela de detalhes recarrega o dashboard
                     onPortfolioTap: (portfolio, startup) =>
                         Navigator.pushNamed(
                           context,
                           '/startup-detail',
-                          arguments: {'startupId': portfolio.startupId},
-                        ),
+                          arguments: portfolio.startupId,
+                        ).then((_) => _refresh()),
                   ),
                 ],
               ),

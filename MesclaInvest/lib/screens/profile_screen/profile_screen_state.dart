@@ -2,26 +2,26 @@
 part of 'profile_screen.dart';
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  static const ProfileData _profileData = ProfileData(
-    name: 'Nome do usuário',
-    email: 'email@exemplo.com',
-    phone: '(00) 00000-0000',
-  );
-  // TODO: quando reimplementar dados reais do perfil, substituir estes dados fixos.
-
   bool _isMfaLoading = false;
   bool _isMfaEnabled = false;
   bool _isMfaStatusLoading = true;
   bool _isSigningOut = false;
   String? _mfaMessage;
   bool _wasCurrentRoute = false;
+  late final Future<ProfileData> _profileFuture;
+  final ProfileService _profileService = ProfileService();
   final ProfileMfaService _mfaService = ProfileMfaService();
   final LogoutService _logoutService = LogoutService();
 
   @override
   void initState() {
     super.initState();
+    _profileFuture = _loadProfileData();
     _loadMfaStatus();
+  }
+
+  Future<ProfileData> _loadProfileData() {
+    return _profileService.loadProfileData();
   }
 
   void _onNavTap(int index) {
@@ -124,36 +124,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5F5),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const ProfilePageHeader(),
-              const SizedBox(height: 24),
-              const ProfileMainCard(profileData: _profileData),
-              const SizedBox(height: 24),
-              const ProfileSectionTitle(title: 'DADOS DA CONTA'),
-              const SizedBox(height: 12),
-              const ProfileAccountDataCard(profileData: _profileData),
-              const SizedBox(height: 24),
-              const ProfileSectionTitle(title: 'SEGURANCA'),
-              const SizedBox(height: 12),
-              ProfileSecurityCard(
-                isMfaStatusLoading: _isMfaStatusLoading,
-                isMfaEnabled: _isMfaEnabled,
-                isMfaLoading: _isMfaLoading,
-                message: _mfaMessage,
-                onActivate: _start2FAFlow,
+        child: FutureBuilder<ProfileData>(
+          future: _profileFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.hasError) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Text(
+                    'Não foi possível carregar os dados do perfil.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            final profileData = snapshot.data ?? const ProfileData(
+              name: 'Usuário',
+              email: 'E-mail não cadastrado',
+              phone: 'Telefone não cadastrado',
+              cpf: 'CPF não cadastrado',
+              createdAt: null,
+            );
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const ProfilePageHeader(),
+                  const SizedBox(height: 24),
+                  ProfileMainCard(profileData: profileData),
+                  const SizedBox(height: 24),
+                  const ProfileSectionTitle(title: 'DADOS DA CONTA'),
+                  const SizedBox(height: 12),
+                  ProfileAccountDataCard(profileData: profileData),
+                  const SizedBox(height: 24),
+                  const ProfileSectionTitle(title: 'SEGURANCA'),
+                  const SizedBox(height: 12),
+                  ProfileSecurityCard(
+                    isMfaStatusLoading: _isMfaStatusLoading,
+                    isMfaEnabled: _isMfaEnabled,
+                    isMfaLoading: _isMfaLoading,
+                    message: _mfaMessage,
+                    onActivate: _start2FAFlow,
+                  ),
+                  const SizedBox(height: 16),
+                  ProfileLogoutCard(
+                    onTap: _signOut,
+                    isLoading: _isSigningOut,
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
-              const SizedBox(height: 16),
-              ProfileLogoutCard(
-                onTap: _signOut,
-                isLoading: _isSigningOut,
-              ),
-              const SizedBox(height: 24),
-            ],
-          ),
+            );
+          },
         ),
       ),
       bottomNavigationBar: AppBottomNavigation(

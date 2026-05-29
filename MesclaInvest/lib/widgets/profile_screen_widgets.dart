@@ -71,9 +71,9 @@ class ProfileMainCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Investidor desde maio 2026',
-            style: TextStyle(
+          Text(
+            _buildInvestorSinceText(profileData.createdAt),
+            style: const TextStyle(
               fontSize: 14,
               color: Color(0xFF8B9297),
             ),
@@ -81,6 +81,30 @@ class ProfileMainCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _buildInvestorSinceText(DateTime? createdAt) {
+    if (createdAt == null) {
+      return 'Investidor desde data não informada';
+    }
+
+    const months = [
+      'janeiro',
+      'fevereiro',
+      'março',
+      'abril',
+      'maio',
+      'junho',
+      'julho',
+      'agosto',
+      'setembro',
+      'outubro',
+      'novembro',
+      'dezembro',
+    ];
+
+    final monthName = months[createdAt.month - 1];
+    return 'Investidor desde ${createdAt.day} de $monthName de ${createdAt.year}';
   }
 }
 
@@ -126,7 +150,7 @@ class ProfileAccountDataCard extends StatelessWidget {
           const _ProfileDivider(),
           _ProfileInfoRow(icon: Icons.phone_outlined, title: 'Telefone', value: profileData.phone),
           const _ProfileDivider(),
-          const _ProfileInfoRow(icon: Icons.calendar_today_outlined, title: 'CPF', value: '... ... ...-12'),
+          _ProfileInfoRow(icon: Icons.calendar_today_outlined, title: 'CPF', value: profileData.cpf),
         ],
       ),
     );

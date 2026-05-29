@@ -44,8 +44,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     // Busca o nome do usuário no Firestore
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('usuarios')
+      final doc = await FirebaseFirestore.instanceFor(
+        app: Firebase.app(),
+        databaseId: 'projeto3',
+      )
+          .collection('users')
           .doc(user.uid)
           .get();
       final nome = doc.data()?['nome'] as String? ?? '';

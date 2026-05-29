@@ -228,6 +228,8 @@ class DashboardInvestimentos extends StatelessWidget {
   final List<TokenPortfolio> portfolios;
   // Lista de startups carregadas
   final List<Map<String, dynamic>> startups;
+  // Mapa de histórico de preço por startupId
+  final Map<String, List<Map<String, dynamic>>> priceHistoryMap;
   // Filtro de estágio selecionado
   final String? filtroEstagio;
   // Callback para mudar o filtro
@@ -239,6 +241,7 @@ class DashboardInvestimentos extends StatelessWidget {
     super.key,
     required this.portfolios,
     required this.startups,
+    required this.priceHistoryMap,
     required this.filtroEstagio,
     required this.onFiltroChanged,
     required this.onPortfolioTap,
@@ -318,9 +321,13 @@ class DashboardInvestimentos extends StatelessWidget {
                     (s) => s['id'] == portfolio.startupId,
                 orElse: () => <String, dynamic>{},
               );
+              // Busca o histórico de preço da startup — lista vazia se não carregado ainda
+              final priceHistory =
+                  priceHistoryMap[portfolio.startupId] ?? [];
               return _PortfolioCardEstilizado(
                 portfolio: portfolio,
                 startup: startup,
+                priceHistory: priceHistory,
                 onTap: () => onPortfolioTap(portfolio, startup),
               );
             }),
@@ -330,15 +337,18 @@ class DashboardInvestimentos extends StatelessWidget {
   }
 }
 
-// Exibe um card de investimento individual estilizado
+// Exibe um card de investimento individual com mini gráfico de histórico real
 class _PortfolioCardEstilizado extends StatelessWidget {
   final TokenPortfolio portfolio;
   final Map<String, dynamic> startup;
+  // Histórico de preço da startup para o mini gráfico
+  final List<Map<String, dynamic>> priceHistory;
   final VoidCallback onTap;
 
   const _PortfolioCardEstilizado({
     required this.portfolio,
     required this.startup,
+    required this.priceHistory,
     required this.onTap,
   });
 
@@ -367,6 +377,12 @@ class _PortfolioCardEstilizado extends StatelessWidget {
     positivo ? kDashPrimaryColor : const Color(0xFFE53935);
     // Inicial do nome para o avatar
     final inicial = nome.isNotEmpty ? nome[0].toUpperCase() : '?';
+
+    // Extrai preços do histórico para o mini gráfico
+    final precos = priceHistory
+        .map((p) => ((p['priceCents'] as num?)?.toDouble() ?? 0) / 100)
+        .where((p) => p > 0)
+        .toList();
 
     return GestureDetector(
       onTap: onTap,
@@ -486,10 +502,18 @@ class _PortfolioCardEstilizado extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            // Mini gráfico verde ou vermelho conforme variação
+            // Mini gráfico com dados reais se disponível, estático como fallback
             SizedBox(
               height: 32,
-              child: CustomPaint(
+              child: precos.length >= 2
+                  ? CustomPaint(
+                painter: _MiniHistoryPainter(
+                  precos: precos,
+                  positivo: positivo,
+                ),
+                size: const Size(double.infinity, 32),
+              )
+                  : CustomPaint(
                 painter: _MiniLinePainter(positivo: positivo),
                 size: const Size(double.infinity, 32),
               ),
@@ -673,7 +697,79 @@ class _DashActionButton extends StatelessWidget {
   }
 }
 
-// Pinta o mini gráfico de linha no card de portfólio
+// Pinta o mini gráfico usando dados reais de histórico de preço
+class _MiniHistoryPainter extends CustomPainter {
+  // Lista de preços em reais
+  final List<double> precos;
+  // Se a variação é positiva ou negativa
+  final bool positivo;
+
+  const _MiniHistoryPainter({
+    required this.precos,
+    required this.positivo,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (precos.length < 2) return;
+
+    final color = positivo ? kDashPrimaryColor : const Color(0xFFE53935);
+
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          color.withValues(alpha: 0.15),
+          color.withValues(alpha: 0.01),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..style = PaintingStyle.fill;
+
+    // Normaliza os preços para o intervalo [0, 1]
+    final minPreco = precos.reduce((a, b) => a < b ? a : b);
+    final maxPreco = precos.reduce((a, b) => a > b ? a : b);
+    final range = maxPreco - minPreco;
+
+    final path = Path();
+    final fillPath = Path();
+
+    for (int i = 0; i < precos.length; i++) {
+      final x = size.width * i / (precos.length - 1);
+      // Inverte Y pois canvas cresce para baixo
+      final normalizado = range > 0 ? (precos[i] - minPreco) / range : 0.5;
+      final y = size.height * (1 - normalizado);
+
+      if (i == 0) {
+        path.moveTo(x, y);
+        fillPath.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+        fillPath.lineTo(x, y);
+      }
+    }
+
+    fillPath.lineTo(size.width, size.height);
+    fillPath.lineTo(0, size.height);
+    fillPath.close();
+
+    canvas.drawPath(fillPath, fillPaint);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MiniHistoryPainter old) =>
+      old.precos != precos || old.positivo != positivo;
+}
+
+// Pinta o mini gráfico estático — fallback quando não há histórico suficiente
 class _MiniLinePainter extends CustomPainter {
   // Se a variação é positiva ou negativa
   final bool positivo;

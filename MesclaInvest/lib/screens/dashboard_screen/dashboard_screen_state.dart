@@ -8,7 +8,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Repositório de exchange para buscar saldo e portfólios
   final ExchangeRepository _exchangeRepository = ExchangeRepository();
 
-  // Repositório de startups para buscar a lista de startups ativas
+  // Repositório de startups para buscar lista e detalhes
   final StartupRepository _startupRepository = StartupRepository();
 
   // Future que carrega o dashboard do usuário
@@ -19,6 +19,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // Lista de startups carregadas do banco
   List<Map<String, dynamic>> _startups = [];
+
+  // Mapa de histórico de preço por startupId
+  Map<String, List<Map<String, dynamic>>> _priceHistoryMap = {};
 
   // Nome do usuário buscado do Firestore
   String _nomeUsuario = 'Usuário';
@@ -37,7 +40,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _saldoFuture = _fetchSaldo();
   }
 
-  // Busca o dashboard de investimentos do usuário
+  // Busca o dashboard e o histórico de preço de cada startup do portfólio
   Future<UserInvestmentsDashboard> _fetchDashboard() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception('Usuário não autenticado.');
@@ -77,6 +80,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _startups = await _startupRepository.listarStartups();
     } catch (e) {
       debugPrint('Erro ao carregar startups: $e');
+    }
+
+    // Busca o priceHistory de cada startup do portfólio em paralelo
+    if (dashboard.portfolios.isNotEmpty) {
+      final novoHistoryMap = <String, List<Map<String, dynamic>>>{};
+
+      // Função auxiliar que busca o histórico de uma startup com segurança
+      Future<void> buscarHistorico(String startupId) async {
+        try {
+          final data =
+          await _startupRepository.buscarDetalheStartup(startupId);
+          novoHistoryMap[startupId] = (data['priceHistory'] as List? ?? [])
+              .whereType<Map>()
+              .map((p) => Map<String, dynamic>.from(p))
+              .toList();
+        } catch (e) {
+          // Se falhar para uma startup, registra lista vazia
+          novoHistoryMap[startupId] = [];
+          debugPrint('Erro ao buscar histórico de $startupId: $e');
+        }
+      }
+
+      // Executa todas as buscas em paralelo
+      await Future.wait(
+        dashboard.portfolios
+            .map((p) => buscarHistorico(p.startupId)),
+      );
+
+      if (mounted) {
+        setState(() {
+          _priceHistoryMap = novoHistoryMap;
+        });
+      }
     }
 
     return dashboard;
@@ -163,16 +199,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   DashboardInvestimentos(
                     portfolios: portfoliosFiltrados,
                     startups: _startups,
+                    priceHistoryMap: _priceHistoryMap,
                     filtroEstagio: _filtroEstagio,
                     onFiltroChanged: _setFiltro,
                     onPortfolioTap: (portfolio, startup) =>
                         Navigator.pushNamed(
                           context,
-                          '/detalhes-token',
-                          arguments: {
-                            'portfolio': portfolio,
-                            'startup': startup,
-                          },
+                          '/startup-detail',
+                          arguments: {'startupId': portfolio.startupId},
                         ),
                   ),
                 ],

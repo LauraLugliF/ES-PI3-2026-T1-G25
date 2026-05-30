@@ -218,14 +218,15 @@ class ExchangeRepository {
   static const String _acceptOfferFunctionName = 'acceptMarketOfferHandler';
   static const String _cancelOfferFunctionName = 'cancelMarketOfferHandler';
 
-  /// Cria uma oferta de venda no mercado P2P.
-  /// Os tokens são removidos do portfólio imediatamente e ficam reservados.
+  /// Cria uma oferta de compra ou venda no mercado P2P.
+  /// Para venda, os tokens são reservados. Para compra, o saldo em dinheiro é reservado.
   Future<Map<String, dynamic>> criarOferta({
     required String sellerId,
     required String sellerEmail,
     required String startupId,
     required int quantidade,
     required double precoPorToken,
+    String type = 'sell',
   }) async {
     final response = await http.post(
       _buildFunctionUri(_createOfferFunctionName),
@@ -236,6 +237,7 @@ class ExchangeRepository {
         'startupId': startupId,
         'quantidade': quantidade,
         'precoPorToken': precoPorToken,
+        'type': type,
       }),
     );
 

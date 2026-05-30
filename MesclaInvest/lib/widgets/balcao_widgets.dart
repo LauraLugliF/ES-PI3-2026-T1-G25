@@ -194,17 +194,20 @@ class _BalcaoInputField extends StatelessWidget {
 // Campo de digitação específico para preço, com o símbolo "R$" embutido
 class _BalcaoPriceInputField extends StatelessWidget {
   final TextEditingController controller; // Controlador do campo de texto de preço
+  final bool enabled;
 
   // Construtor do widget BalcaoPriceInputField
   const _BalcaoPriceInputField({
     required this.controller, // Recebe o controlador do input de preço
+    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
     // Retorna o input de preço com prefixo de cifrão
     return TextField(
-      controller: controller, // Vincula o controlador de texto de preço
+      controller: controller, // Vincula controlador de texto de preço
+      enabled: enabled,
       keyboardType: const TextInputType.numberWithOptions(decimal: true), // Habilita o teclado numérico decimal
       style: const TextStyle(fontSize: 15, color: Color(0xFF222222), fontWeight: FontWeight.w500), // Estilo do texto do valor
       decoration: InputDecoration(
@@ -220,7 +223,7 @@ class _BalcaoPriceInputField extends StatelessWidget {
           ),
         ),
         prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0), // Remove limites mínimos de largura do ícone
-        fillColor: const Color(0xFFF5F5F5), // Define fundo cinza claro para o input
+        fillColor: enabled ? const Color(0xFFF5F5F5) : const Color(0xFFEAEAEA), // Define fundo cinza claro ou escuro
         filled: true, // Ativa a cor de fundo cinza claro
         contentPadding: const EdgeInsets.symmetric(vertical: 14), // Espaçamento vertical interno do input
         enabledBorder: OutlineInputBorder(
@@ -314,6 +317,39 @@ class _BalcaoActionButton extends StatelessWidget {
 // ==========================================
 // CARD DE COMPRA DIRETA
 // ==========================================
+Widget _subTypeButton({
+  required String label,
+  required bool active,
+  required VoidCallback onTap,
+}) {
+  return Expanded(
+    child: GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? const Color(0xFF1A9A6C) : const Color(0xFFEEEEEE),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: active ? const Color(0xFF1A9A6C) : const Color(0xFFDDDDDD),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: active ? Colors.white : const Color(0xFF666666),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 class _BuyCard extends StatelessWidget {
   final List<Map<String, dynamic>> startups; // Lista de todas as startups disponíveis
   final String? selectedStartupId; // ID da startup selecionada no formulário
@@ -321,6 +357,8 @@ class _BuyCard extends StatelessWidget {
   final TextEditingController quantidadeController; // Controlador para digitar quantidade
   final TextEditingController precoController; // Controlador para digitar preço unitário
   final double buyTotal; // Valor total da compra direta
+  final String tipoCompra; // 'plataforma' ou 'p2p'
+  final ValueChanged<String> onTipoCompraChanged;
   final VoidCallback onPressed; // Ação disparada ao enviar formulário de compra
 
   // Construtor do card de compra direta
@@ -331,6 +369,8 @@ class _BuyCard extends StatelessWidget {
     required this.quantidadeController, // Recebe controlador de quantidade
     required this.precoController, // Recebe controlador de preço
     required this.buyTotal, // Recebe total calculado
+    required this.tipoCompra,
+    required this.onTipoCompraChanged,
     required this.onPressed, // Recebe callback de clique
   });
 
@@ -380,13 +420,65 @@ class _BuyCard extends StatelessWidget {
                 child: const Icon(Icons.trending_up, color: Color(0xFF1A9A6C), size: 18), // Ícone verde
               ),
               const SizedBox(width: 10), // Espaçamento de 10px
-              const Text(
-                'Comprar tokens', // Título principal do card
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111111)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tipoCompra == 'p2p' ? 'Comprar P2P' : 'Comprar da plataforma', // Título principal do card
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111111)),
+                    ),
+                    Text(
+                      tipoCompra == 'p2p' ? 'Cria intenção de compra no mercado secundário' : 'Compra instantânea da plataforma', // Subtítulo
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF888888)),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 14), // Espaçamento vertical de 14px
+          const SizedBox(height: 12),
+          // Seletor de Tipo de Compra: Plataforma / P2P
+          Row(
+            children: [
+              _subTypeButton(
+                label: 'Direto da Plataforma',
+                active: tipoCompra == 'plataforma',
+                onTap: () => onTipoCompraChanged('plataforma'),
+              ),
+              const SizedBox(width: 8),
+              _subTypeButton(
+                label: 'Comprar P2P',
+                active: tipoCompra == 'p2p',
+                onTap: () => onTipoCompraChanged('p2p'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Info Box se for P2P
+          if (tipoCompra == 'p2p') ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF8E1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFFE082), width: 1),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, size: 14, color: Color(0xFFF57F17)),
+                  SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Seu saldo em reais ficará reservado até outro usuário aceitar sua oferta de compra.',
+                      style: TextStyle(fontSize: 11, color: Color(0xFFF57F17), fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
           // Seletor da startup
           _BalcaoDropdown<String>(
             value: selectedStartupId, // Vincula a startup selecionada
@@ -411,6 +503,7 @@ class _BuyCard extends StatelessWidget {
           // Campo para digitar preço unitário
           _BalcaoPriceInputField(
             controller: precoController, // Vincula controlador de preço
+            enabled: tipoCompra == 'p2p',
           ),
           const SizedBox(height: 8), // Espaçamento vertical de 8px
           // Exibição do total estimado
@@ -418,9 +511,9 @@ class _BuyCard extends StatelessWidget {
           const SizedBox(height: 8), // Espaçamento vertical de 8px
           // Botão para processar compra
           _BalcaoActionButton(
-            label: 'Comprar da plataforma', // Texto descritivo
+            label: tipoCompra == 'p2p' ? 'Publicar intenção de compra' : 'Comprar da plataforma', // Texto descritivo
             color: const Color(0xFF1A9A6C), // Verde primário
-            icon: Icons.trending_up, // Ícone de alta
+            icon: tipoCompra == 'p2p' ? Icons.storefront_outlined : Icons.trending_up, // Ícone de alta
             onPressed: onPressed, // Função para registrar transação
           ),
         ],
@@ -432,6 +525,39 @@ class _BuyCard extends StatelessWidget {
 // ==========================================
 // CARD DE VENDA — CRIA OFERTA P2P
 // ==========================================
+Widget _subTypeSellButton({
+  required String label,
+  required bool active,
+  required VoidCallback onTap,
+}) {
+  return Expanded(
+    child: GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? const Color(0xFFD32F2F) : const Color(0xFFEEEEEE),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: active ? const Color(0xFFD32F2F) : const Color(0xFFDDDDDD),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: active ? Colors.white : const Color(0xFF666666),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 class _SellCard extends StatelessWidget {
   final List<Map<String, dynamic>> startups; // Lista de todas as startups
   final List<TokenPortfolio> portfolios; // Lista de tokens que o usuário de fato tem
@@ -440,6 +566,8 @@ class _SellCard extends StatelessWidget {
   final TextEditingController quantidadeController; // Controlador para digitar quantidade de venda
   final TextEditingController precoController; // Controlador para digitar preço desejado
   final double sellTotal; // Total a receber estimado
+  final String tipoVenda; // 'plataforma' ou 'p2p'
+  final ValueChanged<String> onTipoVendaChanged;
   final VoidCallback onPressed; // Ação ao submeter formulário de venda
 
   // Construtor do card de venda P2P
@@ -451,6 +579,8 @@ class _SellCard extends StatelessWidget {
     required this.quantidadeController, // Recebe controlador de quantidade
     required this.precoController, // Recebe controlador de preço
     required this.sellTotal, // Recebe total calculado
+    required this.tipoVenda,
+    required this.onTipoVendaChanged,
     required this.onPressed, // Recebe ação de clique
   });
 
@@ -525,49 +655,93 @@ class _SellCard extends StatelessWidget {
                   color: const Color(0xFFFDECEA), // Fundo vermelho claro
                   borderRadius: BorderRadius.circular(9), // Borda de 9px
                 ),
-                child: const Icon(Icons.storefront_outlined, color: Color(0xFFD32F2F), size: 18), // Ícone vermelho
+                child: Icon(
+                  tipoVenda == 'p2p' ? Icons.storefront_outlined : Icons.trending_down,
+                  color: const Color(0xFFD32F2F),
+                  size: 18,
+                ), // Ícone vermelho
               ),
               const SizedBox(width: 10), // Espaçamento de 10px
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Vender tokens', // Título
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111111)),
+                      tipoVenda == 'p2p' ? 'Vender P2P' : 'Vender para a plataforma', // Título
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111111)),
                     ),
                     Text(
-                      'Cria oferta pública no mercado P2P', // Subtítulo
-                      style: TextStyle(fontSize: 11, color: Color(0xFF888888)),
+                      tipoVenda == 'p2p' ? 'Cria oferta pública no mercado secundário' : 'Venda instantânea para a plataforma', // Subtítulo
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF888888)),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8), // Espaçamento vertical de 8px
-          // Aviso explicando o funcionamento do P2P (caixa amarela)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), // Espaçamento interno da caixa
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF8E1), // Fundo amarelo claro de alerta
-              borderRadius: BorderRadius.circular(8), // Bordas arredondadas de 8px
-              border: Border.all(color: const Color(0xFFFFE082), width: 1), // Borda amarela mais forte
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.info_outline, size: 14, color: Color(0xFFF57F17)), // Ícone amarelo de informação
-                SizedBox(width: 6), // Espacinho de 6px
-                Expanded(
-                  child: Text(
-                    'Seus tokens ficam reservados até outro usuário aceitar sua oferta.', // Texto explicativo
-                    style: TextStyle(fontSize: 11, color: Color(0xFFF57F17), fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(height: 12),
+          // Seletor de Tipo de Venda: Plataforma / P2P
+          Row(
+            children: [
+              _subTypeSellButton(
+                label: 'Para a Plataforma',
+                active: tipoVenda == 'plataforma',
+                onTap: () => onTipoVendaChanged('plataforma'),
+              ),
+              const SizedBox(width: 8),
+              _subTypeSellButton(
+                label: 'Vender P2P',
+                active: tipoVenda == 'p2p',
+                onTap: () => onTipoVendaChanged('p2p'),
+              ),
+            ],
           ),
-          const SizedBox(height: 10), // Espaçamento vertical de 10px
+          const SizedBox(height: 10),
+          // Info Box baseada em Tipo de Venda
+          if (tipoVenda == 'p2p') ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF8E1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFFE082), width: 1),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, size: 14, color: Color(0xFFF57F17)),
+                  SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Seus tokens ficam reservados até outro usuário aceitar sua oferta de venda.',
+                      style: TextStyle(fontSize: 11, color: Color(0xFFF57F17), fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5EF),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFA5D6A7), width: 1),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, size: 14, color: Color(0xFF2E7D32)),
+                  SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Sua venda será processada instantaneamente com a plataforma e o saldo creditado em sua carteira.',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF2E7D32), fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
           // Seletor da startup
           _BalcaoDropdown<String>(
             value: selectedStartupId, // Vincula startup selecionada
@@ -603,6 +777,7 @@ class _SellCard extends StatelessWidget {
           // Preço que ele deseja vender
           _BalcaoPriceInputField(
             controller: precoController, // Vincula controlador de preço de venda
+            enabled: tipoVenda == 'p2p',
           ),
           const SizedBox(height: 8), // Espaçamento vertical de 8px
           // Total a receber estimado
@@ -610,9 +785,9 @@ class _SellCard extends StatelessWidget {
           const SizedBox(height: 8), // Espaçamento vertical de 8px
           // Botão publicar oferta no mercado
           _BalcaoActionButton(
-            label: 'Publicar oferta no mercado', // Rótulo
+            label: tipoVenda == 'p2p' ? 'Publicar oferta no mercado' : 'Vender para a plataforma', // Rótulo
             color: const Color(0xFFD32F2F), // Cor vermelha de destaque de venda
-            icon: Icons.storefront_outlined, // Ícone de vitrine
+            icon: tipoVenda == 'p2p' ? Icons.storefront_outlined : Icons.trending_down, // Ícone de vitrine
             onPressed: onPressed, // Envia para criar oferta P2P
           ),
         ],
@@ -624,7 +799,7 @@ class _SellCard extends StatelessWidget {
 // ==========================================
 // SEÇÃO DE OFERTAS DO MERCADO P2P
 // ==========================================
-class _MarketOffersSection extends StatelessWidget {
+class _MarketOffersSection extends StatefulWidget {
   final Future<List<Map<String, dynamic>>> ofertasFuture; // Future que busca ofertas abertas no banco
   final List<Map<String, dynamic>> startups; // Lista de todas as startups
   final String currentUserId; // ID do usuário logado no sistema
@@ -639,6 +814,13 @@ class _MarketOffersSection extends StatelessWidget {
     required this.onAceitar, // Recebe callback de compra
     required this.onCancelar, // Recebe callback de cancelamento
   });
+
+  @override
+  State<_MarketOffersSection> createState() => _MarketOffersSectionState();
+}
+
+class _MarketOffersSectionState extends State<_MarketOffersSection> {
+  String _activeSubTab = 'venda'; // 'venda' ou 'compra'
 
   @override
   Widget build(BuildContext context) {
@@ -663,21 +845,75 @@ class _MarketOffersSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Ofertas do mercado', // Título
+                  'Ofertas do mercado P2P', // Título
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF111111)),
                 ),
                 Text(
-                  'Compre tokens de outros investidores', // Subtítulo descritivo
+                  'Negocie diretamente com outros investidores', // Subtítulo descritivo
                   style: TextStyle(fontSize: 11, color: Color(0xFF888888)),
                 ),
               ],
             ),
           ],
         ),
-        const SizedBox(height: 12), // Espaçamento vertical de 12px
+        const SizedBox(height: 12),
+        // Sub-tabs para escolher entre Ofertas de Venda e Ofertas de Compra
+        Container(
+          height: 38,
+          decoration: BoxDecoration(
+            color: const Color(0xFFEEEEEE),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.all(2),
+          child: Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _activeSubTab = 'venda'),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: _activeSubTab == 'venda' ? const Color(0xFF1565C0) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      'Ofertas de Venda',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: _activeSubTab == 'venda' ? Colors.white : const Color(0xFF666666),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _activeSubTab = 'compra'),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: _activeSubTab == 'compra' ? const Color(0xFF1A9A6C) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      'Ofertas de Compra',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: _activeSubTab == 'compra' ? Colors.white : const Color(0xFF666666),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
         // FutureBuilder para carregar as ofertas do Firebase de forma assíncrona
         FutureBuilder<List<Map<String, dynamic>>>(
-          future: ofertasFuture, // Vincula a promessa de carregar ofertas
+          future: widget.ofertasFuture, // Vincula a promessa de carregar ofertas
           builder: (context, snapshot) {
             // Se ainda não concluiu a chamada no banco, exibe um indicador circular de progresso
             if (snapshot.connectionState != ConnectionState.done) {
@@ -704,7 +940,17 @@ class _MarketOffersSection extends StatelessWidget {
               );
             }
 
-            final ofertas = snapshot.data ?? []; // Pega lista de ofertas ou lista vazia
+            final todasOfertas = snapshot.data ?? []; // Pega lista de ofertas or lista vazia
+
+            // Filtrar as ofertas pelo sub-tab ativo
+            final ofertas = todasOfertas.where((o) {
+              final type = o['type'] as String? ?? 'sell';
+              if (_activeSubTab == 'venda') {
+                return type == 'sell';
+              } else {
+                return type == 'buy';
+              }
+            }).toList();
 
             // Se não houver nenhuma oferta aberta no momento (lista vazia)
             if (ofertas.isEmpty) {
@@ -715,19 +961,27 @@ class _MarketOffersSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12), // Borda arredondada de 12px
                   border: Border.all(color: const Color(0xFFDDDDDD), width: 1.5), // Borda cinza
                 ),
-                child: const Center(
+                child: Center(
                   child: Column(
                     children: [
-                      Icon(Icons.storefront_outlined, size: 32, color: Color(0xFFCCCCCC)), // Ícone cinza
-                      SizedBox(height: 8), // Espaçamento vertical
+                      Icon(
+                        _activeSubTab == 'venda' ? Icons.storefront_outlined : Icons.shopping_bag_outlined,
+                        size: 32,
+                        color: const Color(0xFFCCCCCC),
+                      ), // Ícone cinza
+                      const SizedBox(height: 8), // Espaçamento vertical
                       Text(
-                        'Nenhuma oferta disponível no momento.', // Texto informativo
-                        style: TextStyle(fontSize: 13, color: Color(0xFF888888)),
+                        _activeSubTab == 'venda'
+                            ? 'Nenhuma oferta de venda disponível no momento.'
+                            : 'Nenhuma oferta de compra disponível no momento.', // Texto informativo
+                        style: const TextStyle(fontSize: 13, color: Color(0xFF888888)),
                       ),
-                      SizedBox(height: 4), // Espaçamento vertical
+                      const SizedBox(height: 4), // Espaçamento vertical
                       Text(
-                        'Seja o primeiro a vender tokens no mercado!', // Subtexto motivador
-                        style: TextStyle(fontSize: 11, color: Color(0xFFAAAAAA)),
+                        _activeSubTab == 'venda'
+                            ? 'Seja o primeiro a vender tokens no mercado!'
+                            : 'Seja o primeiro a comprar tokens no mercado!', // Subtexto motivador
+                        style: const TextStyle(fontSize: 11, color: Color(0xFFAAAAAA)),
                       ),
                     ],
                   ),
@@ -746,15 +1000,16 @@ class _MarketOffersSection extends StatelessWidget {
                 final precoCents = (oferta['precoPorTokenCents'] as num?)?.toInt() ?? 0; // Preço em centavos no banco
                 final precoReais = precoCents / 100.0; // Converte preço para reais
                 final totalReais = precoReais * quantidade; // Calcula o custo total daquela oferta
+                final type = oferta['type'] as String? ?? 'sell';
 
                 // Busca o nome da startup associada ao ID
-                final startup = startups.firstWhere(
+                final startup = widget.startups.firstWhere(
                   (s) => s['id'] == startupId,
                   orElse: () => {'name': startupId},
                 );
                 final startupName = startup['name'] as String? ?? startupId; // Nome legível da startup
 
-                final isMinhaOferta = sellerId == currentUserId; // Verifica se a oferta é do usuário logado
+                final isMinhaOferta = sellerId == widget.currentUserId; // Verifica se a oferta é do usuário logado
 
                 // Retorna o card estruturado para a oferta
                 return _MarketOfferCard(
@@ -765,8 +1020,9 @@ class _MarketOffersSection extends StatelessWidget {
                   precoReais: precoReais, // Preço por token
                   totalReais: totalReais, // Preço total da oferta
                   isMinhaOferta: isMinhaOferta, // Flag indicadora se é dele
-                  onAceitar: () => onAceitar(ofertaId), // Callback para comprar
-                  onCancelar: () => onCancelar(ofertaId), // Callback para cancelar
+                  type: type,
+                  onAceitar: () => widget.onAceitar(ofertaId), // Callback para aceitar
+                  onCancelar: () => widget.onCancelar(ofertaId), // Callback para cancelar
                 );
               }).toList(),
             );
@@ -786,6 +1042,7 @@ class _MarketOfferCard extends StatelessWidget {
   final double precoReais; // Preço unitário em reais
   final double totalReais; // Preço total em reais
   final bool isMinhaOferta; // Define se a oferta pertence ao usuário ativo
+  final String type; // Tipo da oferta: "buy" ou "sell"
   final VoidCallback onAceitar; // Ação ao clicar em comprar
   final VoidCallback onCancelar; // Ação ao clicar em cancelar
 
@@ -798,12 +1055,15 @@ class _MarketOfferCard extends StatelessWidget {
     required this.precoReais, // Recebe preco reais
     required this.totalReais, // Recebe total reais
     required this.isMinhaOferta, // Recebe flag de autoria
+    required this.type,
     required this.onAceitar, // Recebe callback de compra
     required this.onCancelar, // Recebe callback de cancelamento
   });
 
   @override
   Widget build(BuildContext context) {
+    final isBuy = type == 'buy';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8), // Margem inferior de 8px entre os cartões
       padding: const EdgeInsets.all(14), // Espaçamento interno de 14px
@@ -811,7 +1071,9 @@ class _MarketOfferCard extends StatelessWidget {
         color: Colors.white, // Fundo branco do card
         borderRadius: BorderRadius.circular(12), // Bordas arredondadas de 12px
         border: Border.all(
-          color: isMinhaOferta ? const Color(0xFFFFE0B2) : const Color(0xFFDDDDDD), // Borda laranja para oferta própria, cinza para terceiros
+          color: isMinhaOferta
+              ? const Color(0xFFFFE0B2)
+              : (isBuy ? const Color(0xFFA5D6A7) : const Color(0xFFDDDDDD)),
           width: 1.5, // Largura de 1.5px
         ),
         boxShadow: const [
@@ -830,7 +1092,7 @@ class _MarketOfferCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isMinhaOferta
                       ? const Color(0xFFFFF3E0) // Fundo laranja claro para oferta do próprio usuário
-                      : const Color(0xFFE3F2FD), // Fundo azul claro para ofertas de outros
+                      : (isBuy ? const Color(0xFFE8F5EF) : const Color(0xFFE3F2FD)), // Fundo verde ou azul
                   borderRadius: BorderRadius.circular(10), // Borda de 10px
                 ),
                 child: Center(
@@ -840,8 +1102,8 @@ class _MarketOfferCard extends StatelessWidget {
                       fontSize: 16, // Tamanho de 16px para a letra
                       fontWeight: FontWeight.w800, // Fonte bem grossa
                       color: isMinhaOferta
-                          ? const Color(0xFFE65100) // Cor laranja para letra de oferta própria
-                          : const Color(0xFF1565C0), // Cor azul para letra de ofertas alheias
+                          ? const Color(0xFFE65100)
+                          : (isBuy ? const Color(0xFF1A9A6C) : const Color(0xFF1565C0)),
                     ),
                   ),
                 ),
@@ -872,9 +1134,9 @@ class _MarketOfferCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(20), // Estilo pílula
                               border: Border.all(color: const Color(0xFFFFCC80), width: 1), // Contorno laranja
                             ),
-                            child: const Text(
-                              'Minha oferta', // Rótulo
-                              style: TextStyle(
+                            child: Text(
+                              isBuy ? 'Minha compra' : 'Minha venda', // Rótulo
+                              style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
                                 color: Color(0xFFE65100), // Texto laranja
@@ -885,7 +1147,7 @@ class _MarketOfferCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2), // Espaçamento vertical de 2px
                     Text(
-                      'Vendedor: $sellerEmail', // Mostra o e-mail do vendedor correspondente
+                      isBuy ? 'Comprador: $sellerEmail' : 'Vendedor: $sellerEmail',
                       style: const TextStyle(fontSize: 11, color: Color(0xFF888888)), // Cinza
                       overflow: TextOverflow.ellipsis, // Corta texto longo com reticências
                     ),
@@ -909,13 +1171,18 @@ class _MarketOfferCard extends StatelessWidget {
                 _OfertaMetric(label: 'Quantidade', value: '$quantidade token${quantidade > 1 ? 's' : ''}'),
                 // Renderiza métrica de preço unitário
                 _OfertaMetric(label: 'Preço unit.', value: _formatCurrency(precoReais)),
-                // Renderiza métrica de preço total, destacada em azul
-                _OfertaMetric(label: 'Total', value: _formatCurrency(totalReais), highlight: true),
+                // Renderiza métrica de preço total, destacada
+                _OfertaMetric(
+                  label: 'Total',
+                  value: _formatCurrency(totalReais),
+                  highlight: true,
+                  highlightColor: isBuy ? const Color(0xFF1A9A6C) : const Color(0xFF1565C0),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 10), // Espaçamento vertical de 10px
-          // Botão de ação: "Comprar" ou "Cancelar minha oferta"
+          // Botão de ação: "Comprar", "Vender" ou "Cancelar minha oferta"
           SizedBox(
             width: double.infinity, // Ocupa toda largura disponível
             child: isMinhaOferta
@@ -934,15 +1201,16 @@ class _MarketOfferCard extends StatelessWidget {
                     ),
                   )
                 : ElevatedButton.icon(
-                    // Botão preenchido azul (comprar)
-                    onPressed: onAceitar, // Chama a rotina de compra
-                    icon: const Icon(Icons.shopping_cart_checkout, size: 16), // Ícone de carrinho
+                    onPressed: onAceitar, // Chama a rotina de aceitação
+                    icon: Icon(isBuy ? Icons.sell_outlined : Icons.shopping_cart_checkout, size: 16),
                     label: Text(
-                      'Comprar por ${_formatCurrency(totalReais)}', // Exibe o valor do botão de compra
+                      isBuy
+                          ? 'Vender para esta oferta'
+                          : 'Comprar por ${_formatCurrency(totalReais)}',
                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1565C0), // Cor azul escuro
+                      backgroundColor: isBuy ? const Color(0xFF1A9A6C) : const Color(0xFF1565C0),
                       foregroundColor: Colors.white, // Letras brancas
                       elevation: 0, // Sem sombra
                       padding: const EdgeInsets.symmetric(vertical: 10), // Altura interna do botão
@@ -960,13 +1228,15 @@ class _MarketOfferCard extends StatelessWidget {
 class _OfertaMetric extends StatelessWidget {
   final String label; // Título da métrica (ex: Preço)
   final String value; // Valor exibido correspondente
-  final bool highlight; // Flag indicadora se deve destacar a cor em azul
+  final bool highlight; // Flag indicadora se deve destacar a cor
+  final Color? highlightColor;
 
   // Construtor do widget OfertaMetric
   const _OfertaMetric({
     required this.label, // Recebe o rótulo
     required this.value, // Recebe o valor
     this.highlight = false, // Padrão é sem destaque
+    this.highlightColor,
   });
 
   @override
@@ -984,7 +1254,9 @@ class _OfertaMetric extends StatelessWidget {
           style: TextStyle(
             fontSize: highlight ? 13 : 12, // Tamanho 13px se tiver destaque, senão 12px
             fontWeight: FontWeight.w700, // Negrito forte
-            color: highlight ? const Color(0xFF1565C0) : const Color(0xFF222222), // Azul se destacado, preto se padrão
+            color: highlight
+                ? (highlightColor ?? const Color(0xFF1565C0))
+                : const Color(0xFF222222),
           ),
         ),
       ],

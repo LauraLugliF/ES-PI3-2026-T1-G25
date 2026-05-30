@@ -8,6 +8,7 @@ import {FieldValue} from "firebase-admin/firestore";
 import {db} from "../../startups/shared/firebase";
 import {adicionarTokensAoPortfolio} from "../repositories/portfolioRepository";
 import {MarketOffer} from "../types/MarketOffer";
+import {adicionarDeposito} from "../repositories/userRepository";
 
 export const cancelMarketOfferHandler = onRequest(
   {region: "southamerica-east1", invoker: "public"},
@@ -51,20 +52,33 @@ export const cancelMarketOfferHandler = onRequest(
         atualizadaEm: FieldValue.serverTimestamp(),
       });
 
-      // Devolve os tokens ao portfólio do vendedor
-      const precoPorTokenReais = oferta.precoPorTokenCents / 100;
-      await adicionarTokensAoPortfolio(
-        userId,
-        oferta.startupId,
-        oferta.quantidade,
-        precoPorTokenReais,
-      );
+      // Devolve o recurso reservado dependendo do tipo da oferta (Reais para compras, Tokens para vendas)
+      if (oferta.type === "buy") {
+        // Devolve os Reais que estavam bloqueados ao saldo do criador da oferta de compra
+        const precoTotalCents = oferta.precoPorTokenCents * oferta.quantidade;
+        await adicionarDeposito(userId, precoTotalCents);
 
-      response.status(200).send({
-        sucesso: true,
-        mensagem: `Oferta cancelada. ${oferta.quantidade} token(s) devolvidos à sua carteira.`,
-        ofertaId: offerId,
-      });
+        response.status(200).send({
+          sucesso: true,
+          mensagem: `Oferta de compra cancelada. R$ ${(precoTotalCents / 100).toFixed(2)} devolvidos à sua carteira.`,
+          ofertaId: offerId,
+        });
+      } else {
+        // Devolve os tokens que estavam reservados de volta ao portfólio do vendedor
+        const precoPorTokenReais = oferta.precoPorTokenCents / 100;
+        await adicionarTokensAoPortfolio(
+          userId,
+          oferta.startupId,
+          oferta.quantidade,
+          precoPorTokenReais,
+        );
+
+        response.status(200).send({
+          sucesso: true,
+          mensagem: `Oferta cancelada. ${oferta.quantidade} token(s) devolvidos à sua carteira.`,
+          ofertaId: offerId,
+        });
+      }
     } catch (error) {
       logger.error("Erro ao cancelar oferta de mercado.", error);
       response.status(500).send("Erro interno ao cancelar oferta.");

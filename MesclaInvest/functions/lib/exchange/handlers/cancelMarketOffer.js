@@ -42,6 +42,7 @@ const logger = __importStar(require("firebase-functions/logger"));
 const firestore_1 = require("firebase-admin/firestore");
 const firebase_1 = require("../../startups/shared/firebase");
 const portfolioRepository_1 = require("../repositories/portfolioRepository");
+const userRepository_1 = require("../repositories/userRepository");
 exports.cancelMarketOfferHandler = (0, https_1.onRequest)({ region: "southamerica-east1", invoker: "public" }, async (request, response) => {
     var _a, _b;
     try {
@@ -75,14 +76,26 @@ exports.cancelMarketOfferHandler = (0, https_1.onRequest)({ region: "southameric
             status: "cancelled",
             atualizadaEm: firestore_1.FieldValue.serverTimestamp(),
         });
-        // Devolve os tokens ao portfólio do vendedor
-        const precoPorTokenReais = oferta.precoPorTokenCents / 100;
-        await (0, portfolioRepository_1.adicionarTokensAoPortfolio)(userId, oferta.startupId, oferta.quantidade, precoPorTokenReais);
-        response.status(200).send({
-            sucesso: true,
-            mensagem: `Oferta cancelada. ${oferta.quantidade} token(s) devolvidos à sua carteira.`,
-            ofertaId: offerId,
-        });
+        if (oferta.type === "buy") {
+            // Devolve os Reais ao saldo do criador
+            const precoTotalCents = oferta.precoPorTokenCents * oferta.quantidade;
+            await (0, userRepository_1.adicionarDeposito)(userId, precoTotalCents);
+            response.status(200).send({
+                sucesso: true,
+                mensagem: `Oferta de compra cancelada. R$ ${(precoTotalCents / 100).toFixed(2)} devolvidos à sua carteira.`,
+                ofertaId: offerId,
+            });
+        }
+        else {
+            // Devolve os tokens ao portfólio do vendedor
+            const precoPorTokenReais = oferta.precoPorTokenCents / 100;
+            await (0, portfolioRepository_1.adicionarTokensAoPortfolio)(userId, oferta.startupId, oferta.quantidade, precoPorTokenReais);
+            response.status(200).send({
+                sucesso: true,
+                mensagem: `Oferta cancelada. ${oferta.quantidade} token(s) devolvidos à sua carteira.`,
+                ofertaId: offerId,
+            });
+        }
     }
     catch (error) {
         logger.error("Erro ao cancelar oferta de mercado.", error);

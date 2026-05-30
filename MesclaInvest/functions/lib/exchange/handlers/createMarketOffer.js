@@ -42,53 +42,83 @@ const logger = __importStar(require("firebase-functions/logger"));
 const firestore_1 = require("firebase-admin/firestore");
 const firebase_1 = require("../../startups/shared/firebase");
 const portfolioRepository_1 = require("../repositories/portfolioRepository");
-const startupRepository_1 = require("../../startups/repositories/startupRepository");
+const userRepository_1 = require("../repositories/userRepository");
 exports.createMarketOfferHandler = (0, https_1.onRequest)({ region: "southamerica-east1", invoker: "public" }, async (request, response) => {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d, _e, _f;
     try {
         const sellerId = ((_a = request.body) === null || _a === void 0 ? void 0 : _a.sellerId) || "";
         const sellerEmail = ((_b = request.body) === null || _b === void 0 ? void 0 : _b.sellerEmail) || "";
         const startupId = ((_c = request.body) === null || _c === void 0 ? void 0 : _c.startupId) || "";
         const quantidade = ((_d = request.body) === null || _d === void 0 ? void 0 : _d.quantidade) || 0;
         const precoPorToken = ((_e = request.body) === null || _e === void 0 ? void 0 : _e.precoPorToken) || 0;
+        const type = ((_f = request.body) === null || _f === void 0 ? void 0 : _f.type) || "sell";
         // Valida campos obrigatórios
         if (!sellerId || !startupId || quantidade <= 0 || precoPorToken <= 0) {
             response.status(400).send("sellerId, startupId, quantidade e precoPorToken são obrigatórios e devem ser positivos.");
             return;
         }
-        // Verifica se o usuário possui tokens suficientes no portfólio
-        const portfolio = await (0, portfolioRepository_1.obterPortfolio)(sellerId, startupId);
-        if (!portfolio) {
-            response.status(404).send("Você não possui tokens desta startup.");
-            return;
-        }
-        if (portfolio.quantidade < quantidade) {
-            response.status(400).send(`Você possui apenas ${portfolio.quantidade} token(s), mas tentou ofertar ${quantidade}.`);
-            return;
-        }
         const precoPorTokenCents = Math.round(precoPorToken * 100);
         const precoTotalCents = precoPorTokenCents * quantidade;
-        // Remove os tokens do portfólio imediatamente (ficam reservados na oferta)
-        await (0, portfolioRepository_1.removerTokensDoPortfolio)(sellerId, startupId, quantidade);
-        // Cria a oferta no Firestore
-        const ofertaRef = firebase_1.db.collection("marketOffers").doc();
-        await ofertaRef.set({
-            sellerId,
-            sellerEmail,
-            startupId,
-            quantidade,
-            precoPorTokenCents,
-            status: "open",
-            criadaEm: firestore_1.FieldValue.serverTimestamp(),
-            atualizadaEm: firestore_1.FieldValue.serverTimestamp(),
-        });
-        // Impacta o preço do token (pressão de venda — preço cai)
-        await (0, startupRepository_1.atualizarStartupAposVenda)(startupId, quantidade, precoTotalCents);
-        response.status(200).send({
-            sucesso: true,
-            mensagem: "Oferta criada com sucesso. Seus tokens estão reservados e visíveis no mercado.",
-            ofertaId: ofertaRef.id,
-        });
+        if (type === "buy") {
+            // Valida se o comprador possui saldo em dinheiro suficiente
+            const saldoDisponivel = await (0, userRepository_1.getUserBalance)(sellerId);
+            if (saldoDisponivel === null || saldoDisponivel < precoTotalCents) {
+                response.status(400).send(`Você possui saldo insuficiente para criar esta oferta de compra. Necessário: R$ ${(precoTotalCents / 100).toFixed(2)}.`);
+                return;
+            }
+            // Reserva o dinheiro deduzindo do saldo do comprador imediatamente
+            await (0, userRepository_1.deduzirSaldoUsuario)(sellerId, precoTotalCents);
+            // Cria a oferta no Firestore
+            const ofertaRef = firebase_1.db.collection("marketOffers").doc();
+            await ofertaRef.set({
+                sellerId,
+                sellerEmail,
+                startupId,
+                quantidade,
+                precoPorTokenCents,
+                status: "open",
+                type: "buy",
+                criadaEm: firestore_1.FieldValue.serverTimestamp(),
+                atualizadaEm: firestore_1.FieldValue.serverTimestamp(),
+            });
+            response.status(200).send({
+                sucesso: true,
+                mensagem: "Oferta de compra criada com sucesso. Seu saldo foi reservado e a oferta está visível no mercado.",
+                ofertaId: ofertaRef.id,
+            });
+        }
+        else {
+            // Verifica se o usuário possui tokens suficientes no portfólio
+            const portfolio = await (0, portfolioRepository_1.obterPortfolio)(sellerId, startupId);
+            if (!portfolio) {
+                response.status(404).send("Você não possui tokens desta startup.");
+                return;
+            }
+            if (portfolio.quantidade < quantidade) {
+                response.status(400).send(`Você possui apenas ${portfolio.quantidade} token(s), mas tentou ofertar ${quantidade}.`);
+                return;
+            }
+            // Remove os tokens do portfólio imediatamente (ficam reservados na oferta)
+            await (0, portfolioRepository_1.removerTokensDoPortfolio)(sellerId, startupId, quantidade);
+            // Cria a oferta no Firestore
+            const ofertaRef = firebase_1.db.collection("marketOffers").doc();
+            await ofertaRef.set({
+                sellerId,
+                sellerEmail,
+                startupId,
+                quantidade,
+                precoPorTokenCents,
+                status: "open",
+                type: "sell",
+                criadaEm: firestore_1.FieldValue.serverTimestamp(),
+                atualizadaEm: firestore_1.FieldValue.serverTimestamp(),
+            });
+            response.status(200).send({
+                sucesso: true,
+                mensagem: "Oferta criada com sucesso. Seus tokens estão reservados e visíveis no mercado.",
+                ofertaId: ofertaRef.id,
+            });
+        }
     }
     catch (error) {
         logger.error("Erro ao criar oferta de mercado.", error);

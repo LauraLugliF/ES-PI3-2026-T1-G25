@@ -267,16 +267,46 @@ class _BalcaoScreenState extends State<BalcaoScreen> {
     }
   }
 
-  // Cria uma OFERTA DE VENDA no mercado P2P ao clicar no botão
-  Future<void> _handleCriarOferta() async {
+  // --- CONTROLES DE MODALIDADE DE NEGOCIAÇÃO (DIRETO DA PLATAFORMA VS MERCADO P2P) ---
+  // Controla se a compra atual é via plataforma ou via oferta P2P ('plataforma' ou 'p2p')
+  String _tipoCompra = 'plataforma'; 
+  // Controla se a venda atual é direta para a plataforma ou via oferta P2P ('plataforma' ou 'p2p')
+  String _tipoVenda = 'p2p';         
+
+  // Altera a modalidade de compra e recarrega o preço padrão do token caso escolha plataforma
+  void _setTipoCompra(String tipo) {
+    setState(() {
+      _tipoCompra = tipo;
+    });
+    if (tipo == 'plataforma' && _selectedBuyStartupId != null) {
+      _loadBuyStartupPrice(_selectedBuyStartupId!);
+    }
+  }
+
+  // Altera a modalidade de venda e recarrega o preço padrão do token caso escolha plataforma
+  void _setTipoVenda(String tipo) {
+    setState(() {
+      _tipoVenda = tipo;
+    });
+    if (tipo == 'plataforma' && _selectedSellStartupId != null) {
+      _loadSellStartupPrice(_selectedSellStartupId!);
+    }
+  }
+
+  // Registra uma nova oferta de compra ou venda no mercado secundário P2P
+  Future<void> _handleCriarOferta(String type) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final startupId = _selectedSellStartupId;
-    final quantidade = int.tryParse(_sellQuantidadeController.text) ?? 0;
-    final precoEmReais = double.tryParse(_sellPrecoController.text) ?? 0.0;
+    // Associa os controles e campos corretos com base no tipo da transação ('buy' / 'sell')
+    final startupId = type == 'buy' ? _selectedBuyStartupId : _selectedSellStartupId;
+    final qtyController = type == 'buy' ? _buyQuantidadeController : _sellQuantidadeController;
+    final priceController = type == 'buy' ? _buyPrecoController : _sellPrecoController;
 
-    // Validações antes de criar a oferta
+    final quantidade = int.tryParse(qtyController.text) ?? 0;
+    final precoEmReais = double.tryParse(priceController.text) ?? 0.0;
+
+    // Validações locais antes de disparar para a Function no Firebase
     if (startupId == null || quantidade <= 0 || precoEmReais <= 0) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -286,23 +316,75 @@ class _BalcaoScreenState extends State<BalcaoScreen> {
     }
 
     try {
-      // Cria a oferta no mercado P2P
+      // Dispara a requisição HTTP para a Cloud Function criar a oferta de mercado P2P
       await _exchangeRepository.criarOferta(
         sellerId: user.uid,
         sellerEmail: user.email ?? 'Usuário',
         startupId: startupId,
         quantidade: quantidade,
         precoPorToken: precoEmReais,
+        type: type,
       );
       if (!mounted) return;
+      
+      final msg = type == 'buy' 
+          ? 'Intenção de compra publicada! Seu saldo foi reservado no mercado.'
+          : 'Oferta publicada! Seus tokens estão reservados no mercado.';
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Oferta publicada! Seus tokens estão reservados no mercado.'),
-          backgroundColor: Color(0xFF1A9A6C),
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: const Color(0xFF1A9A6C),
         ),
       );
       
-      // Limpa tudo e recarrega ofertas
+      // Limpa os controladores e recarrega os painéis e tabelas da tela
+      qtyController.clear();
+      priceController.clear();
+      setState(() {
+        if (type == 'buy') {
+          _selectedBuyStartupId = null;
+        } else {
+          _selectedSellStartupId = null;
+        }
+        _refreshCachedData();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: ${e.toString()}')),
+      );
+    }
+  }
+
+  // Executa uma VENDA DIRETA instantânea de tokens para a plataforma (retirada imediata de saldo)
+  Future<void> _handleSellDirect() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final startupId = _selectedSellStartupId;
+    final quantidade = int.tryParse(_sellQuantidadeController.text) ?? 0;
+    final precoEmReais = double.tryParse(_sellPrecoController.text) ?? 0.0;
+
+    // Validações básicas de campos obrigatórios positivos
+    if (startupId == null || startupId.isEmpty || quantidade <= 0 || precoEmReais <= 0) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Preencha startup, quantidade e preço válidos')));
+      return;
+    }
+
+    try {
+      // Executa a venda imediata chamando a respectiva Function de venda
+      final res = await _exchangeRepository.venderTokens(user.uid, startupId, quantidade, precoEmReais);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Venda realizada: ${res['mensagem'] ?? 'sucesso'}'),
+          backgroundColor: const Color(0xFFD32F2F),
+        ),
+      );
+      
+      // Reseta formulários e atualiza caches
       _sellQuantidadeController.clear();
       _sellPrecoController.clear();
       setState(() {
@@ -311,9 +393,7 @@ class _BalcaoScreenState extends State<BalcaoScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: ${e.toString()}')));
     }
   }
 
@@ -330,7 +410,7 @@ class _BalcaoScreenState extends State<BalcaoScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res['mensagem'] as String? ?? 'Compra realizada com sucesso!'),
+          content: Text(res['mensagem'] as String? ?? 'Operação realizada com sucesso!'),
           backgroundColor: const Color(0xFF1A9A6C),
         ),
       );
@@ -448,7 +528,11 @@ class _BalcaoScreenState extends State<BalcaoScreen> {
                         quantidadeController: _buyQuantidadeController,
                         precoController: _buyPrecoController,
                         buyTotal: _buyTotal,
-                        onPressed: _handleBuy,
+                        tipoCompra: _tipoCompra,
+                        onTipoCompraChanged: _setTipoCompra,
+                        onPressed: _tipoCompra == 'p2p'
+                            ? () => _handleCriarOferta('buy')
+                            : _handleBuy,
                       )
                     else
                       _SellCard(
@@ -459,7 +543,11 @@ class _BalcaoScreenState extends State<BalcaoScreen> {
                         quantidadeController: _sellQuantidadeController,
                         precoController: _sellPrecoController,
                         sellTotal: _sellTotal,
-                        onPressed: _handleCriarOferta,
+                        tipoVenda: _tipoVenda,
+                        onTipoVendaChanged: _setTipoVenda,
+                        onPressed: _tipoVenda == 'p2p'
+                            ? () => _handleCriarOferta('sell')
+                            : _handleSellDirect,
                       ),
                     const SizedBox(height: 10),
                     // Seção de ofertas P2P sempre visível abaixo

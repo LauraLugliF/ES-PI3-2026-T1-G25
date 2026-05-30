@@ -17,25 +17,31 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
   // Guarda os dados da startup carregados de forma assíncrona.
   late Future<Map<String, dynamic>> _startupFuture;
 
-  // Executa quando o state é criado.
+  // ==========================================
+  // INICIALIZAÇÃO E CICLO DE VIDA DO WIDGET
+  // ==========================================
+
+  // Executa quando o state é criado pela primeira vez na árvore de widgets.
   @override
   void initState() {
-    // Inicializa o comportamento padrão do Flutter.
     super.initState();
-    // Inicia a busca dos dados da startup assim que a tela abre.
+    // Inicia a busca assíncrona dos dados detalhados da startup no Firestore.
     _startupFuture = _repository.buscarDetalheStartup(widget.startupId);
   }
 
-  // Executa quando a tela vai ser descartada.
+  // Executa quando a tela vai ser removida definitivamente da árvore (descartada).
   @override
   void dispose() {
-    // Libera o controlador do campo de pergunta.
+    // Libera a memória alocada para o controlador do campo de digitação de perguntas.
     _perguntaController.dispose();
-    // Finaliza o ciclo do state.
     super.dispose();
   }
 
-  // Recarrega os dados da startup para refletir preço e métricas atualizadas.
+  // ==========================================
+  // MÉTODOS DE AÇÃO E GERENCIAMENTO DE ESTADO
+  // ==========================================
+
+  // Força uma nova chamada ao banco de dados para atualizar dados e preços do token da startup na UI.
   void _refreshStartup() {
     if (!mounted) {
       return;
@@ -46,37 +52,38 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
     });
   }
 
-  // Envia uma pergunta (pública ou privada) para a startup.
+  // Envia uma pergunta formulada pelo usuário (podendo ser pública ou privada) para a startup.
   Future<void> _enviarPergunta(
     String startupId, {
-    String visibility = 'publica',
+    String visibility = 'publica', // Padrão: pública (visível para todos)
   }) async {
-    // Lê o texto digitado removendo espaços.
+    // Limpa espaços em branco extras antes e depois do texto digitado
     final texto = _perguntaController.text.trim();
 
-    // Se o campo estiver vazio, não faz nada.
+    // Impede o envio se o campo estiver totalmente vazio
     if (texto.isEmpty) return;
 
     try {
-      // Chama o repositório para enviar a pergunta.
+      // Dispara chamada assíncrona no repositório de startups
       await _repository.enviarPergunta(
         startupId: startupId,
         text: texto,
         visibility: visibility,
       );
 
-      // Limpa o campo após o envio.
+      // Limpa a caixa de digitação após o envio de sucesso
       _perguntaController.clear();
 
-      // Fecha o teclado virtual.
+      // Remove o foco do teclado virtual do celular para fechá-lo
       if (!mounted) return;
       FocusScope.of(context).unfocus();
 
-      // Mostra confirmação visual para o usuário com detalhe da visibilidade.
+      // Define a mensagem de feedback de acordo com o nível de visibilidade escolhido
       final snackText = visibility == 'privada'
           ? 'Pergunta enviada como privada. Visível somente para você e investidores.'
           : 'Pergunta pública enviada com sucesso.';
 
+      // Exibe snackbar verde de confirmação na parte inferior da tela
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(snackText),
@@ -84,13 +91,13 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
         ),
       );
 
-      // Recarrega os dados para mostrar a nova pergunta.
+      // Atualiza o estado da tela para puxar e exibir a nova lista de perguntas/respostas
       setState(() {
         _startupFuture =
             _repository.buscarDetalheStartup(widget.startupId);
       });
     } catch (e) {
-      // Mostra mensagem de erro se falhar.
+      // Caso ocorra falha na requisição, avisa o usuário com snackbar vermelho de erro
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -101,12 +108,12 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
     }
   }
 
-  // Trata o clique nos itens do menu inferior.
+  // Callback de navegação do BottomNavigationBar. Redireciona o usuário para as telas correspondentes.
   void _onNavTap(int index) {
-    // Se já estiver nesta tela, não faz nada.
+    // Evita recarregar a mesma tela se ele já estiver na aba atual
     if (index == _navIndex) return;
 
-    // Decide para onde navegar conforme o item tocado.
+    // Navega para a rota configurada com substituição de tela (pushReplacementNamed)
     switch (index) {
       case 0:
         Navigator.pushReplacementNamed(context, '/explore');
@@ -127,7 +134,9 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
     }
   }
 
-  // Monta a interface visual da tela.
+  // ==========================================
+  // CONSTRUTOR DA INTERFACE VISUAL (BUILD)
+  // ==========================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -318,8 +327,56 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
                 ),
                 StartupConteudosSection(
                   videosUrls: videosUrls,
-                  onAbrirPlano: () {},
-                  onAbrirVideos: () {},
+                  onAbrirPlano: () async {
+                    // Alterado: Acessa o link do plano de negócios (pitchDeckUrl) do banco de dados e abre diretamente em navegador externo
+                    final pitchDeckUrl = startup['pitchDeckUrl'] as String?;
+                    if (pitchDeckUrl != null && pitchDeckUrl.isNotEmpty) {
+                      final uri = Uri.parse(pitchDeckUrl);
+                      try {
+                        final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        if (!launched) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Não foi possível abrir o plano de negócios.')),
+                          );
+                        }
+                      } catch (e) {
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Não foi possível abrir o plano de negócios.')),
+                        );
+                      }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Plano de negócios não disponível para esta startup.')),
+                      );
+                    }
+                  },
+                  onAbrirVideos: () async {
+                    // Alterado: Acessa o primeiro link de vídeo demonstrativo (demoVideos) do banco e abre diretamente em navegador externo
+                    if (videosUrls.isNotEmpty) {
+                      final videoUrl = videosUrls.first;
+                      final uri = Uri.parse(videoUrl);
+                      try {
+                        final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        if (!launched) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Não foi possível abrir o vídeo demonstrativo.')),
+                          );
+                        }
+                      } catch (e) {
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Não foi possível abrir o vídeo demonstrativo.')),
+                        );
+                      }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Vídeo demonstrativo não disponível.')),
+                      );
+                    }
+                  },
                 ),
               ],
             ),

@@ -69,40 +69,76 @@ exports.acceptMarketOfferHandler = (0, https_1.onRequest)({ region: "southameric
         }
         // Comprador não pode comprar a própria oferta
         if (oferta.sellerId === buyerId) {
-            response.status(400).send("Você não pode comprar sua própria oferta.");
+            response.status(400).send("Você não pode aceitar sua própria oferta.");
             return;
         }
         const precoTotalCents = oferta.precoPorTokenCents * oferta.quantidade;
-        // Verifica saldo do comprador
-        const saldoComprador = await (0, userRepository_1.getUserBalance)(buyerId);
-        if (saldoComprador === null || saldoComprador < precoTotalCents) {
-            response.status(400).send("Saldo insuficiente para comprar esta oferta.");
-            return;
-        }
-        // Executa a transação atômica no Firestore
-        await firebase_1.db.runTransaction(async (tx) => {
-            // Marca oferta como preenchida
-            tx.update(ofertaRef, {
-                status: "filled",
-                atualizadaEm: firestore_1.FieldValue.serverTimestamp(),
+        if (oferta.type === "buy") {
+            // Caso em que a oferta é de COMPRA:
+            // Quem está aceitando (buyerId) é o VENDEDOR dos tokens, e quem criou a oferta (oferta.sellerId) é o COMPRADOR.
+            // Verifica se quem aceita possui tokens suficientes no portfólio
+            const portfolio = await (0, portfolioRepository_1.obterPortfolio)(buyerId, oferta.startupId);
+            if (!portfolio || portfolio.quantidade < oferta.quantidade) {
+                response.status(400).send(`Você não possui tokens suficientes desta startup para vender. Necessário: ${oferta.quantidade}.`);
+                return;
+            }
+            // Executa a transação atômica no Firestore para preencher a oferta
+            await firebase_1.db.runTransaction(async (tx) => {
+                tx.update(ofertaRef, {
+                    status: "filled",
+                    atualizadaEm: firestore_1.FieldValue.serverTimestamp(),
+                });
             });
-        });
-        // Debita saldo do comprador
-        await (0, userRepository_1.deduzirSaldoUsuario)(buyerId, precoTotalCents);
-        // Credita saldo do vendedor
-        await (0, userRepository_1.adicionarDeposito)(oferta.sellerId, precoTotalCents);
-        // Adiciona tokens ao portfólio do comprador
-        const precoPorTokenReais = oferta.precoPorTokenCents / 100;
-        await (0, portfolioRepository_1.adicionarTokensAoPortfolio)(buyerId, oferta.startupId, oferta.quantidade, precoPorTokenReais);
-        // Impacta o preço do token (pressão de compra — preço sobe)
-        await (0, startupRepository_1.atualizarStartupAposCompra)(oferta.startupId, oferta.quantidade, precoTotalCents);
-        response.status(200).send({
-            sucesso: true,
-            mensagem: `Compra realizada! Você adquiriu ${oferta.quantidade} token(s) de ${oferta.startupId}.`,
-            ofertaId: offerId,
-            quantidade: oferta.quantidade,
-            totalPagoCents: precoTotalCents,
-        });
+            // Deduz tokens do portfólio de quem aceitou a oferta
+            await (0, portfolioRepository_1.removerTokensDoPortfolio)(buyerId, oferta.startupId, oferta.quantidade);
+            // Adiciona tokens ao portfólio do criador da oferta (comprador original)
+            const precoPorTokenReais = oferta.precoPorTokenCents / 100;
+            await (0, portfolioRepository_1.adicionarTokensAoPortfolio)(oferta.sellerId, oferta.startupId, oferta.quantidade, precoPorTokenReais);
+            // Credita dinheiro ao saldo de quem aceitou a oferta (vendedor atual)
+            await (0, userRepository_1.adicionarDeposito)(buyerId, precoTotalCents);
+            // Impacta o preço do token (pressão de venda — preço cai)
+            await (0, startupRepository_1.atualizarStartupAposVenda)(oferta.startupId, oferta.quantidade, precoTotalCents);
+            response.status(200).send({
+                sucesso: true,
+                mensagem: `Venda realizada! Você vendeu ${oferta.quantidade} token(s) para ${oferta.sellerEmail || "outro usuário"}.`,
+                ofertaId: offerId,
+                quantidade: oferta.quantidade,
+                totalPagoCents: precoTotalCents,
+            });
+        }
+        else {
+            // Caso em que a oferta é de VENDA (sell ou nulo):
+            // Quem está aceitando (buyerId) é o COMPRADOR dos tokens, e quem criou a oferta (oferta.sellerId) é o VENDEDOR.
+            // Verifica saldo do comprador
+            const saldoComprador = await (0, userRepository_1.getUserBalance)(buyerId);
+            if (saldoComprador === null || saldoComprador < precoTotalCents) {
+                response.status(400).send("Saldo insuficiente para comprar esta oferta.");
+                return;
+            }
+            // Executa a transação atômica no Firestore
+            await firebase_1.db.runTransaction(async (tx) => {
+                tx.update(ofertaRef, {
+                    status: "filled",
+                    atualizadaEm: firestore_1.FieldValue.serverTimestamp(),
+                });
+            });
+            // Debita saldo do comprador
+            await (0, userRepository_1.deduzirSaldoUsuario)(buyerId, precoTotalCents);
+            // Credita saldo do vendedor
+            await (0, userRepository_1.adicionarDeposito)(oferta.sellerId, precoTotalCents);
+            // Adiciona tokens ao portfólio do comprador
+            const precoPorTokenReais = oferta.precoPorTokenCents / 100;
+            await (0, portfolioRepository_1.adicionarTokensAoPortfolio)(buyerId, oferta.startupId, oferta.quantidade, precoPorTokenReais);
+            // Impacta o preço do token (pressão de compra — preço sobe)
+            await (0, startupRepository_1.atualizarStartupAposCompra)(oferta.startupId, oferta.quantidade, precoTotalCents);
+            response.status(200).send({
+                sucesso: true,
+                mensagem: `Compra realizada! Você adquiriu ${oferta.quantidade} token(s) de ${oferta.startupId}.`,
+                ofertaId: offerId,
+                quantidade: oferta.quantidade,
+                totalPagoCents: precoTotalCents,
+            });
+        }
     }
     catch (error) {
         logger.error("Erro ao aceitar oferta de mercado.", error);

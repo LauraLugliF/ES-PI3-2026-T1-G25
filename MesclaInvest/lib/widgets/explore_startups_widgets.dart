@@ -86,6 +86,19 @@ class StartupListItem extends StatelessWidget {
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
+                // Laura Lugli Fonseca Pereira RA: 25000739
+                // Exibe a descrição curta da startup se estiver disponível
+                if (startup.shortDescription.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    startup.shortDescription,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
                 const SizedBox(height: 8),
                 // Preço e seta indicativa de clique
                 Row(

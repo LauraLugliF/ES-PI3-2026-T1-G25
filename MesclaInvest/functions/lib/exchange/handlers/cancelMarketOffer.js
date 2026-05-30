@@ -76,8 +76,9 @@ exports.cancelMarketOfferHandler = (0, https_1.onRequest)({ region: "southameric
             status: "cancelled",
             atualizadaEm: firestore_1.FieldValue.serverTimestamp(),
         });
+        // Devolve o recurso reservado dependendo do tipo da oferta (Reais para compras, Tokens para vendas)
         if (oferta.type === "buy") {
-            // Devolve os Reais ao saldo do criador
+            // Devolve os Reais que estavam bloqueados ao saldo do criador da oferta de compra
             const precoTotalCents = oferta.precoPorTokenCents * oferta.quantidade;
             await (0, userRepository_1.adicionarDeposito)(userId, precoTotalCents);
             response.status(200).send({
@@ -87,7 +88,7 @@ exports.cancelMarketOfferHandler = (0, https_1.onRequest)({ region: "southameric
             });
         }
         else {
-            // Devolve os tokens ao portfólio do vendedor
+            // Devolve os tokens que estavam reservados de volta ao portfólio do vendedor
             const precoPorTokenReais = oferta.precoPorTokenCents / 100;
             await (0, portfolioRepository_1.adicionarTokensAoPortfolio)(userId, oferta.startupId, oferta.quantidade, precoPorTokenReais);
             response.status(200).send({

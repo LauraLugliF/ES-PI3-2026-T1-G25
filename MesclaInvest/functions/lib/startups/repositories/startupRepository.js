@@ -20,6 +20,8 @@ const firebase_1 = require("../shared/firebase");
 const startupsCollection = firebase_1.db.collection("startups");
 // Percentual de impacto por token negociado sobre o preço atual.
 const tokenPriceImpactPercent = 0.0005;
+// Fator que transforma a diferença entre o preço pago e o preço atual em impacto sobre a cotação.
+const tokenPricePaidImpactFactor = 0.1;
 // Dados de demonstração usados para popular o ambiente com registros iniciais.
 const demoStartups = [
     {
@@ -155,8 +157,18 @@ async function atualizarStartupAposNegociacao(startupId, deltaTokens, deltaCapit
         const capitalAtualizado = Math.max(0, ((_a = startup.capitalRaisedCents) !== null && _a !== void 0 ? _a : 0) + deltaCapitalCents);
         const totalTokensAtualizado = Math.max(0, ((_b = startup.totalTokensIssued) !== null && _b !== void 0 ? _b : 0) + deltaTokens);
         const precoAtualAtual = (_c = startup.currentTokenPriceCents) !== null && _c !== void 0 ? _c : 0;
+        // Impacto por volume: quanto maior a quantidade negociada, maior a pressão sobre o preço.
         const priceDeltaCents = Math.max(1, Math.round(precoAtualAtual * tokenPriceImpactPercent * Math.abs(deltaTokens)));
-        const precoAtualizado = Math.max(1, precoAtualAtual + (deltaTokens > 0 ? priceDeltaCents : -priceDeltaCents));
+        const impactoVolumeCents = deltaTokens > 0 ? priceDeltaCents : -priceDeltaCents;
+        // Preço efetivamente pago por token na negociação atual.
+        const precoNegociadoCents = Math.round(Math.abs(deltaCapitalCents) / Math.abs(deltaTokens));
+        // Impacto de percepção de valor: usa a diferença entre o preço pago e o preço atual.
+        const impactoPrecoCents = Math.round((precoNegociadoCents - precoAtualAtual) * tokenPricePaidImpactFactor);
+        const precoCalculado = precoAtualAtual + impactoVolumeCents + impactoPrecoCents;
+        // Limites de volatilidade por transação: ±30% do preço atual.
+        const limiteSuperior = Math.max(1, Math.round(precoAtualAtual * 1.30));
+        const limiteInferior = Math.max(1, Math.round(precoAtualAtual * 0.70));
+        const precoAtualizado = Math.max(1, Math.min(Math.max(precoCalculado, limiteInferior), limiteSuperior));
         transaction.update(startupRef, {
             capitalRaisedCents: capitalAtualizado,
             totalTokensIssued: totalTokensAtualizado,

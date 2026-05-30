@@ -51,6 +51,7 @@ exports.createMarketOfferHandler = (0, https_1.onRequest)({ region: "southameric
         const startupId = ((_c = request.body) === null || _c === void 0 ? void 0 : _c.startupId) || "";
         const quantidade = ((_d = request.body) === null || _d === void 0 ? void 0 : _d.quantidade) || 0;
         const precoPorToken = ((_e = request.body) === null || _e === void 0 ? void 0 : _e.precoPorToken) || 0;
+        // Recupera o tipo de oferta (compra 'buy' ou venda 'sell'). Caso omitido, assume 'sell' por retrocompatibilidade.
         const type = ((_f = request.body) === null || _f === void 0 ? void 0 : _f.type) || "sell";
         // Valida campos obrigatórios
         if (!sellerId || !startupId || quantidade <= 0 || precoPorToken <= 0) {
@@ -59,16 +60,17 @@ exports.createMarketOfferHandler = (0, https_1.onRequest)({ region: "southameric
         }
         const precoPorTokenCents = Math.round(precoPorToken * 100);
         const precoTotalCents = precoPorTokenCents * quantidade;
+        // Se for uma oferta de COMPRA P2P (buy)
         if (type === "buy") {
-            // Valida se o comprador possui saldo em dinheiro suficiente
+            // Valida se o comprador possui saldo em dinheiro suficiente na carteira
             const saldoDisponivel = await (0, userRepository_1.getUserBalance)(sellerId);
             if (saldoDisponivel === null || saldoDisponivel < precoTotalCents) {
                 response.status(400).send(`Você possui saldo insuficiente para criar esta oferta de compra. Necessário: R$ ${(precoTotalCents / 100).toFixed(2)}.`);
                 return;
             }
-            // Reserva o dinheiro deduzindo do saldo do comprador imediatamente
+            // Reserva o dinheiro deduzindo do saldo do comprador imediatamente no momento da criação
             await (0, userRepository_1.deduzirSaldoUsuario)(sellerId, precoTotalCents);
-            // Cria a oferta no Firestore
+            // Cria a oferta de compra com status "open" e tipo "buy" no Firestore
             const ofertaRef = firebase_1.db.collection("marketOffers").doc();
             await ofertaRef.set({
                 sellerId,
@@ -88,7 +90,8 @@ exports.createMarketOfferHandler = (0, https_1.onRequest)({ region: "southameric
             });
         }
         else {
-            // Verifica se o usuário possui tokens suficientes no portfólio
+            // Se for uma oferta de VENDA P2P (sell)
+            // Verifica se o usuário possui de fato os tokens suficientes no portfólio para vender
             const portfolio = await (0, portfolioRepository_1.obterPortfolio)(sellerId, startupId);
             if (!portfolio) {
                 response.status(404).send("Você não possui tokens desta startup.");
@@ -98,9 +101,9 @@ exports.createMarketOfferHandler = (0, https_1.onRequest)({ region: "southameric
                 response.status(400).send(`Você possui apenas ${portfolio.quantidade} token(s), mas tentou ofertar ${quantidade}.`);
                 return;
             }
-            // Remove os tokens do portfólio imediatamente (ficam reservados na oferta)
+            // Remove os tokens do portfólio imediatamente (ficam reservados na oferta do mercado)
             await (0, portfolioRepository_1.removerTokensDoPortfolio)(sellerId, startupId, quantidade);
-            // Cria a oferta no Firestore
+            // Cria a oferta de venda com status "open" e tipo "sell" no Firestore
             const ofertaRef = firebase_1.db.collection("marketOffers").doc();
             await ofertaRef.set({
                 sellerId,

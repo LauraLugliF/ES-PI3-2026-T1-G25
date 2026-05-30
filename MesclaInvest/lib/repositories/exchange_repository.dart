@@ -210,4 +210,97 @@ class ExchangeRepository {
 
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
+
+  // ─── MERCADO P2P ──────────────────────────────────────────────────────────
+
+  static const String _createOfferFunctionName = 'createMarketOfferHandler';
+  static const String _listOffersFunctionName = 'listMarketOffersHandler';
+  static const String _acceptOfferFunctionName = 'acceptMarketOfferHandler';
+  static const String _cancelOfferFunctionName = 'cancelMarketOfferHandler';
+
+  /// Cria uma oferta de venda no mercado P2P.
+  /// Os tokens são removidos do portfólio imediatamente e ficam reservados.
+  Future<Map<String, dynamic>> criarOferta({
+    required String sellerId,
+    required String sellerEmail,
+    required String startupId,
+    required int quantidade,
+    required double precoPorToken,
+  }) async {
+    final response = await http.post(
+      _buildFunctionUri(_createOfferFunctionName),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'sellerId': sellerId,
+        'sellerEmail': sellerEmail,
+        'startupId': startupId,
+        'quantidade': quantidade,
+        'precoPorToken': precoPorToken,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Erro ao criar oferta: ${response.body}');
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  /// Lista as ofertas abertas no mercado P2P.
+  /// Se [startupId] for fornecido, filtra apenas ofertas daquela startup.
+  Future<List<Map<String, dynamic>>> listarOfertas({String? startupId}) async {
+    final response = await http.post(
+      _buildFunctionUri(_listOffersFunctionName),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode(startupId != null ? {'startupId': startupId} : {}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Erro ao listar ofertas: ${response.body}');
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final ofertas = data['ofertas'] as List<dynamic>? ?? [];
+    return ofertas
+        .whereType<Map<String, dynamic>>()
+        .toList();
+  }
+
+  /// Aceita uma oferta do mercado P2P (comprador).
+  /// Debita o saldo do comprador, credita o vendedor e transfere os tokens.
+  Future<Map<String, dynamic>> aceitarOferta({
+    required String buyerId,
+    required String offerId,
+  }) async {
+    final response = await http.post(
+      _buildFunctionUri(_acceptOfferFunctionName),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'buyerId': buyerId, 'offerId': offerId}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Erro ao aceitar oferta: ${response.body}');
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  /// Cancela uma oferta própria no mercado P2P.
+  /// Devolve os tokens reservados ao portfólio do vendedor.
+  Future<Map<String, dynamic>> cancelarOferta({
+    required String userId,
+    required String offerId,
+  }) async {
+    final response = await http.post(
+      _buildFunctionUri(_cancelOfferFunctionName),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'userId': userId, 'offerId': offerId}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Erro ao cancelar oferta: ${response.body}');
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
 }

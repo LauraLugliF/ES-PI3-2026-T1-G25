@@ -1,4 +1,22 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "marketOffers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "precoPorTokenCents", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "marketOffers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "startupId", "order": "ASCENDING" },
+        { "fieldPath": "precoPorTokenCents", "order": "ASCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }

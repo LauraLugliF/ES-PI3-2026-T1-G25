@@ -4,23 +4,29 @@ part of '../screens/explore_startups_screen/explore_startups_screen.dart';
 // Este é o cartão visual (card) de cada startup que aparece na nossa lista de exploração.
 // Ele mostra de forma resumida as principais informações da startup.
 class StartupListItem extends StatelessWidget {
+  // A startup contendo todos os dados a serem exibidos no card
   final StartupData startup;
-  final VoidCallback onTap; // O que acontece quando o usuário clica neste cartão
+  // Ação disparada quando o usuário toca no card
+  final VoidCallback onTap;
 
+  // Construtor padrão do item de lista do Explore Startups
   const StartupListItem({super.key, required this.startup, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    // Acessa o tema global do aplicativo para obter cores e estilos consistentes
     final theme = Theme.of(context);
+    
+    // Retorna um InkWell para dar efeito visual de clique (ripple effect)
     return InkWell(
-      onTap: onTap, // Navega para a tela de detalhes se for clicado
-      borderRadius: BorderRadius.circular(16),
+      onTap: onTap, // Executa a função de navegação repassada ao widget
+      borderRadius: BorderRadius.circular(16), // Bordas arredondadas no clique
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.only(bottom: 12), // Margem externa inferior entre os itens
+        padding: const EdgeInsets.all(12), // Espaçamento interno do card
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
+          color: theme.colorScheme.surfaceContainerHighest, // Cor de fundo do card adaptada ao tema
+          borderRadius: BorderRadius.circular(16), // Bordas arredondadas do card
         ),
         child: Column(
           children: [

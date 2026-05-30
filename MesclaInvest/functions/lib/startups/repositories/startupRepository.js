@@ -19,7 +19,7 @@ const firebase_1 = require("../shared/firebase");
 // Reutiliza a collection de startups do Firestore em toda a rotina de seed.
 const startupsCollection = firebase_1.db.collection("startups");
 // Percentual de impacto por token negociado sobre o preço atual.
-const tokenPriceImpactPercent = 0.02;
+const tokenPriceImpactPercent = 0.0005;
 // Dados de demonstração usados para popular o ambiente com registros iniciais.
 const demoStartups = [
     {

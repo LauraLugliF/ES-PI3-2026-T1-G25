@@ -6,7 +6,7 @@ import {db} from "../shared/firebase";
 const startupsCollection = db.collection("startups");
 
 // Percentual de impacto por token negociado sobre o preço atual.
-const tokenPriceImpactPercent = 0.02;
+const tokenPriceImpactPercent = 0.0005;
 
 // Dados de demonstração usados para popular o ambiente com registros iniciais.
 const demoStartups: Array<StartupDocument & { id: string }> = [

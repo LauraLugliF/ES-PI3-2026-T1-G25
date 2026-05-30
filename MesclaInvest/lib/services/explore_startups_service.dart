@@ -11,6 +11,9 @@ class StartupData {
   final String sector;    // Setor/Ramo (Fintech, Edtech, etc)
   final String tokens;    // Quantidade total de tokens formatada (ex: 10K, 1.5M)
   final String price;     // Preço de venda formatado em Reais (R$)
+  // Laura Lugli Fonseca Pereira RA: 25000739
+  // Descrição curta da startup exibida no card de exploração
+  final String shortDescription;
 
   const StartupData({
     required this.id,
@@ -20,6 +23,7 @@ class StartupData {
     required this.sector,
     required this.tokens,
     required this.price,
+    required this.shortDescription,
   });
 }
 
@@ -78,7 +82,10 @@ class ExploreStartupsService {
         name: startup['name'] ?? '',
         sector: (startup['tags'] as List?)?.firstOrNull ?? 'Tecnologia',
         tokens: _formatTokens(totalTokens),
-        price: 'R\$ ${priceInReais.toStringAsFixed(2)}', // Formata o preço com duas casas decimais
+        price: 'R\$ ${priceInReais.toStringAsFixed(2)}',
+        // Laura Lugli Fonseca Pereira RA: 25000739
+        // Mapeia a descrição curta do banco para o campo do modelo
+        shortDescription: startup['shortDescription'] as String? ?? '',
       );
     }).toList();
   }

@@ -12,10 +12,14 @@ var __rest = (this && this.__rest) || function (s, e) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.seedDemoStartups = seedDemoStartups;
+exports.atualizarStartupAposCompra = atualizarStartupAposCompra;
+exports.atualizarStartupAposVenda = atualizarStartupAposVenda;
 const firestore_1 = require("firebase-admin/firestore");
 const firebase_1 = require("../shared/firebase");
 // Reutiliza a collection de startups do Firestore em toda a rotina de seed.
 const startupsCollection = firebase_1.db.collection("startups");
+// Percentual de impacto por token negociado sobre o preço atual.
+const tokenPriceImpactPercent = 0.02;
 // Dados de demonstração usados para popular o ambiente com registros iniciais.
 const demoStartups = [
     {
@@ -126,8 +130,66 @@ async function seedDemoStartups() {
         const startupRef = startupsCollection.doc(id);
         // Escreve os campos e atualiza timestamps de criação e edição no mesmo commit.
         batch.set(startupRef, Object.assign(Object.assign({}, data), { createdAt: firestore_1.FieldValue.serverTimestamp(), updatedAt: firestore_1.FieldValue.serverTimestamp() }), { merge: true });
+        const historyRef = startupRef.collection("priceHistory").doc();
+        const initialHistoryPoint = {
+            priceCents: data.currentTokenPriceCents,
+            changeType: "seed",
+            quantity: 0,
+            createdAt: firestore_1.FieldValue.serverTimestamp(),
+        };
+        batch.set(historyRef, initialHistoryPoint);
     }
     await batch.commit();
     return demoStartups.map((startup) => startup.id);
+}
+// Atualiza os indicadores financeiros da startup após uma negociação.
+async function atualizarStartupAposNegociacao(startupId, deltaTokens, deltaCapitalCents) {
+    const startupRef = startupsCollection.doc(startupId);
+    await firebase_1.db.runTransaction(async (transaction) => {
+        var _a, _b, _c;
+        const snapshot = await transaction.get(startupRef);
+        if (!snapshot.exists) {
+            throw new Error("Startup não encontrada");
+        }
+        const startup = snapshot.data();
+        const capitalAtualizado = Math.max(0, ((_a = startup.capitalRaisedCents) !== null && _a !== void 0 ? _a : 0) + deltaCapitalCents);
+        const totalTokensAtualizado = Math.max(0, ((_b = startup.totalTokensIssued) !== null && _b !== void 0 ? _b : 0) + deltaTokens);
+        const precoAtualAtual = (_c = startup.currentTokenPriceCents) !== null && _c !== void 0 ? _c : 0;
+        const priceDeltaCents = Math.max(1, Math.round(precoAtualAtual * tokenPriceImpactPercent * Math.abs(deltaTokens)));
+        const precoAtualizado = Math.max(1, precoAtualAtual + (deltaTokens > 0 ? priceDeltaCents : -priceDeltaCents));
+        transaction.update(startupRef, {
+            capitalRaisedCents: capitalAtualizado,
+            totalTokensIssued: totalTokensAtualizado,
+            currentTokenPriceCents: precoAtualizado,
+            updatedAt: firestore_1.FieldValue.serverTimestamp(),
+        });
+        const historyRef = startupRef.collection("priceHistory").doc();
+        const changeType = deltaTokens > 0 ? "compra" : "venda";
+        transaction.set(historyRef, {
+            priceCents: precoAtualizado,
+            changeType,
+            quantity: Math.abs(deltaTokens),
+            createdAt: firestore_1.FieldValue.serverTimestamp(),
+        });
+    });
+    const snapshotAtualizado = await startupRef.get();
+    if (!snapshotAtualizado.exists) {
+        throw new Error("Startup não encontrada após atualização");
+    }
+    return snapshotAtualizado.data();
+}
+// Aplica os efeitos de uma compra na startup.
+async function atualizarStartupAposCompra(startupId, quantidade, precoTotalCents) {
+    if (quantidade <= 0) {
+        throw new Error("quantidade deve ser positiva");
+    }
+    return atualizarStartupAposNegociacao(startupId, quantidade, precoTotalCents);
+}
+// Aplica os efeitos de uma venda na startup.
+async function atualizarStartupAposVenda(startupId, quantidade, precoTotalCents) {
+    if (quantidade <= 0) {
+        throw new Error("quantidade deve ser positiva");
+    }
+    return atualizarStartupAposNegociacao(startupId, -quantidade, -precoTotalCents);
 }
 //# sourceMappingURL=startupRepository.js.map

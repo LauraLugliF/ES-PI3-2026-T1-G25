@@ -1,4 +1,8 @@
 "use strict";
+// LUCAS RODRIGUES XAVIER - 25000508
+// Este arquivo define uma Cloud Function (função na nuvem) chamada "addUser".
+// Ela funciona como uma "porta de entrada" pública na web que o aplicativo chama
+// para salvar as informações de uma nova pessoa no banco de dados.
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -34,18 +38,20 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.addUser = void 0;
-// LUCAS RODRIGUES XAVIER - 25000508
 const https_1 = require("firebase-functions/v2/https");
 const logger = __importStar(require("firebase-functions/logger"));
 const userRepository_1 = require("../repositories/userRepository");
+// Cria o endpoint HTTP na região da América do Sul (São Paulo)
 exports.addUser = (0, https_1.onRequest)({ region: "southamerica-east1", invoker: "public" }, async (request, response) => {
     var _a, _b, _c, _d, _e, _f;
-    const uid = (_a = request.body) === null || _a === void 0 ? void 0 : _a.uid;
+    const uid = (_a = request.body) === null || _a === void 0 ? void 0 : _a.uid; // Pega o identificador único do usuário
+    // Verifica se o identificador do usuário foi enviado corretamente
     if (typeof uid !== "string" || uid.trim().length === 0) {
         response.status(400).send("Campo 'uid' é obrigatório.");
         return;
     }
     try {
+        // Chama o nosso repositório para salvar os dados da pessoa
         await (0, userRepository_1.saveUser)(uid, {
             nome: (_b = request.body) === null || _b === void 0 ? void 0 : _b.nome,
             cpf: (_c = request.body) === null || _c === void 0 ? void 0 : _c.cpf,
@@ -53,9 +59,11 @@ exports.addUser = (0, https_1.onRequest)({ region: "southamerica-east1", invoker
             telefone: (_e = request.body) === null || _e === void 0 ? void 0 : _e.telefone,
             saldo: (_f = request.body) === null || _f === void 0 ? void 0 : _f.saldo,
         });
+        // Retorna uma resposta HTTP 201 indicando que o cadastro foi feito com sucesso
         response.status(201).send("Pessoa cadastrada com sucesso. UID: " + uid);
     }
     catch (error) {
+        // Se houver algum erro, salva nos logs do console do Firebase e avisa o aplicativo
         logger.error("Erro ao cadastrar pessoa.", error);
         response.status(500).send("Erro interno ao cadastrar a pessoa.");
     }

@@ -4,6 +4,13 @@ O MesclaInvest é um aplicativo mobile que simula uma plataforma de investimento
 
 Este repositório contém o desenvolvimento do sistema proposto na disciplina.
 
+## 🧩 Estrutura do repositório
+
+- **Parte do app:** `MesclaInvest/lib`, `MesclaInvest/android`, `MesclaInvest/ios` e `MesclaInvest/web`
+- **Parte lógica / backend:** `MesclaInvest/functions` (Cloud Functions, regras e integrações Firebase)
+- **Artefato de release:** `MesclaInvest/APP/Mesclainvest.apk`
+- **Documentação e materiais:** `Orientações Renata`
+
 ---
 
 ## 👥 Integrantes
@@ -46,7 +53,43 @@ Esta pasta reúne os materiais elaborados a partir das orientações recebidas q
 
 ## ⚙️ Pasta MesclaInvest
 
-Esta pasta concentra os arquivos do aplicativo, incluindo código-fonte e recursos do projeto.
+Esta pasta concentra o projeto completo, com a parte visual do app, a parte lógica do backend e os recursos de build e teste.
+
+### Parte do app
+
+- Interface e navegação em `lib/`
+- Configuração mobile em `android/`, `ios/` e `web/`
+- Testes da aplicação em `test/`
+
+### Parte lógica
+
+- Cloud Functions e integrações Firebase em `functions/`
+- Regras e índices do Firestore em `firestore.rules` e `firestore.indexes.json`
+- Regras de Storage em `storage.rules`
+
+### Release do app
+
+- APK pronto para uso em `APP/Mesclainvest.apk`
+
+## 📲 Como usar a versão release do app
+
+Use esta versão quando quiser abrir o app já compilado, sem rodar o projeto Flutter no computador.
+
+1. Baixe o APK em `MesclaInvest/APP/Mesclainvest.apk`.
+2. Copie o arquivo para um celular Android ou para o emulador.
+3. No Android, ative a opção de instalar apps de fontes desconhecidas, se o sistema solicitar.
+4. Abra o arquivo `Mesclainvest.apk` e confirme a instalação.
+5. Depois de instalado, abra o ícone do MesclaInvest normalmente.
+
+Se estiver usando um emulador Android, você também pode instalar o APK arrastando o arquivo para a tela do emulador ou usando o comando:
+
+```powershell
+adb install -r MesclaInvest/APP/Mesclainvest.apk
+```
+
+Essa versão já contém a lógica do aplicativo e pode ser usada para demonstração e testes de uso, sem precisar compilar o projeto novamente.
+
+Se o SMS de MFA não chegar durante os testes, use o número `+5519998552511` com o código de teste `123456` para continuar a validação.
 
 ## 📌 Descrição do projeto
 

@@ -50,5 +50,9 @@ app.*.map.json
 *.so
 MesclaInvest/build/
 MesclaInvest/android/build/
+!MesclaInvest/artifacts/
+!MesclaInvest/artifacts/app-release.apk
+!MesclaInvest/APP/
+!MesclaInvest/APP/Mesclainvest.apk
 
 .vscode/

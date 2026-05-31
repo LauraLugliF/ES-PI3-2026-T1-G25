@@ -70,16 +70,41 @@ class LoginMfaChallengeContent extends StatelessWidget {
             onPressed: isBusy ? null : onConfirmPressed,
             isLoading: isConfirming,
           ),
-        ],
-        if (isSendingCode && verificationId == null) ...[
+        ] else if (isSendingCode) ...[
           const SizedBox(height: 24),
-          const Center(child: CircularProgressIndicator()),
+          const _LoginMfaLoadingSection(),
         ],
         if (message != null) ...[
           const SizedBox(height: 16),
           LoginMfaMessage(message: message!),
         ],
       ],
+    );
+  }
+}
+
+// Mostra um indicativo visual enquanto o SMS ainda esta sendo preparado.
+class _LoginMfaLoadingSection extends StatelessWidget {
+  const _LoginMfaLoadingSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        children: const [
+          CircularProgressIndicator(),
+          SizedBox(height: 12),
+          Text(
+            'Enviando SMS de MFA...\nAguarde alguns instantes.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF5F6B73),
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

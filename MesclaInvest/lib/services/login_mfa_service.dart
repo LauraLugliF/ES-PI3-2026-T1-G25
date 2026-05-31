@@ -12,11 +12,32 @@ class LoginMfaService {
   Future<UserCredential> signInWithEmailAndPassword({
     required String email,
     required String password,
-  }) {
-    return _repository.signInWithEmailAndPassword(
+  }) async {
+    final credential = await _repository.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
+
+    final user = credential.user;
+    if (user == null) {
+      await _repository.signOut();
+      throw FirebaseAuthException(
+        code: 'user-null',
+        message: 'Não foi possível confirmar o usuário autenticado.',
+      );
+    }
+
+    await user.reload();
+
+    if (!user.emailVerified) {
+      await _repository.signOut();
+      throw FirebaseAuthException(
+        code: 'email-not-verified',
+        message: 'Verifique seu e-mail antes de entrar.',
+      );
+    }
+
+    return credential;
   }
 
   Future<void> sendSmsCode({

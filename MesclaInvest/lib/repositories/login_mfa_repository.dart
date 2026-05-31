@@ -6,6 +6,10 @@ class LoginMfaRepository {
 
   final FirebaseAuth _auth;
 
+  Future<void> signOut() {
+    return _auth.signOut();
+  }
+
   Future<UserCredential> signInWithEmailAndPassword({
     required String email,
     required String password,

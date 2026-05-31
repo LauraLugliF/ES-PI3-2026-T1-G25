@@ -78,6 +78,8 @@ class _LoginScreenState extends State<LoginScreen> {
       return 'Falha de conexão. Verifique a internet e tente novamente.';
     } else if (e.code == 'no-app') {
       return 'Firebase não configurado neste app.';
+    } else if (e.code == 'email-not-verified') {
+      return 'Verifique seu e-mail antes de entrar. Abra a caixa de entrada e clique no link de confirmação.';
     }
 
     return e.message ?? 'Erro ao fazer login.';

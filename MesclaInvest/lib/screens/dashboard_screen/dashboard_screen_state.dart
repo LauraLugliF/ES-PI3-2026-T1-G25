@@ -5,26 +5,14 @@ part of 'dashboard_screen.dart';
 
 // Controla os dados e a lógica da tela de home/dashboard
 class _DashboardScreenState extends State<DashboardScreen> {
-  // Repositório de exchange para buscar saldo e portfólios
-  final ExchangeRepository _exchangeRepository = ExchangeRepository();
-
-  // Repositório de startups para buscar lista e detalhes
-  final StartupRepository _startupRepository = StartupRepository();
+  // Service que carrega os dados consolidados do dashboard.
+  final DashboardService _dashboardService = DashboardService();
 
   // Future que carrega o dashboard do usuário
-  late Future<UserInvestmentsDashboard> _dashboardFuture;
+  late Future<DashboardLoadResult> _dashboardFuture;
 
   // Future que carrega o saldo disponível do usuário
   late Future<double> _saldoFuture;
-
-  // Lista de startups carregadas do banco
-  List<Map<String, dynamic>> _startups = [];
-
-  // Mapa de histórico de preço por startupId
-  Map<String, List<Map<String, dynamic>>> _priceHistoryMap = {};
-
-  // Nome do usuário buscado do Firestore
-  String _nomeUsuario = 'Usuário';
 
   // Controla se o saldo está visível ou oculto
   bool _saldoVisivel = true;
@@ -50,87 +38,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // Busca o dashboard e o histórico de preço de cada startup do portfólio
-  Future<UserInvestmentsDashboard> _fetchDashboard() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw Exception('Usuário não autenticado.');
-
-    // Busca o nome do usuário no Firestore
-    try {
-      final doc = await FirebaseFirestore.instanceFor(
-        app: Firebase.app(),
-        databaseId: 'projeto3',
-      )
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      final nome = doc.data()?['nome'] as String? ?? '';
-      if (mounted) {
-        setState(() {
-          _nomeUsuario = nome.isNotEmpty
-              ? nome.split(' ').first
-              : user.email?.split('@').first ?? 'Usuário';
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _nomeUsuario = user.email?.split('@').first ?? 'Usuário';
-        });
-      }
-    }
-
-    // Busca o dashboard de investimentos
-    final dashboard = await _exchangeRepository.obterDashboardInvestimentos(
-      user.uid,
-    );
-
-    // Carrega a lista de startups para cruzar com os portfólios
-    try {
-      _startups = await _startupRepository.listarStartups();
-    } catch (e) {
-      debugPrint('Erro ao carregar startups: $e');
-    }
-
-    // Busca o priceHistory de cada startup do portfólio em paralelo
-    if (dashboard.portfolios.isNotEmpty) {
-      final novoHistoryMap = <String, List<Map<String, dynamic>>>{};
-
-      // Função auxiliar que busca o histórico de uma startup com segurança
-      Future<void> buscarHistorico(String startupId) async {
-        try {
-          final data =
-          await _startupRepository.buscarDetalheStartup(startupId);
-          novoHistoryMap[startupId] = (data['priceHistory'] as List? ?? [])
-              .whereType<Map>()
-              .map((p) => Map<String, dynamic>.from(p))
-              .toList();
-        } catch (e) {
-          // Se falhar para uma startup, registra lista vazia
-          novoHistoryMap[startupId] = [];
-          debugPrint('Erro ao buscar histórico de $startupId: $e');
-        }
-      }
-
-      // Executa todas as buscas em paralelo
-      await Future.wait(
-        dashboard.portfolios.map((p) => buscarHistorico(p.startupId)),
-      );
-
-      if (mounted) {
-        setState(() {
-          _priceHistoryMap = novoHistoryMap;
-        });
-      }
-    }
-
-    return dashboard;
+  Future<DashboardLoadResult> _fetchDashboard() {
+    return _dashboardService.carregarDashboard();
   }
 
   // Busca o saldo disponível do usuário
   Future<double> _fetchSaldo() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw Exception('Usuário não autenticado.');
-    return _exchangeRepository.obterSaldo(user.uid);
+    return _dashboardService.carregarSaldo();
   }
 
   // Alterna a visibilidade do saldo
@@ -144,7 +58,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
-        child: FutureBuilder<UserInvestmentsDashboard>(
+        child: FutureBuilder<DashboardLoadResult>(
           future: _dashboardFuture,
           builder: (context, snapshot) {
             // Enquanto carrega mostra indicador
@@ -159,29 +73,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
               );
             }
 
-            final dashboard = snapshot.data ??
-                const UserInvestmentsDashboard(
-                  totalInvestidoEmReais: 0,
-                  portfolios: [],
+            final dashboardData = snapshot.data ??
+                const DashboardLoadResult(
+                  nomeUsuario: 'Usuário',
+                  dashboard: UserInvestmentsDashboard(
+                    totalInvestidoEmReais: 0,
+                    portfolios: [],
+                  ),
+                  startups: [],
+                  priceHistoryMap: {},
                 );
 
             // Filtra portfólios pelo estágio selecionado
             final portfoliosFiltrados = _filtroEstagio == null
-                ? dashboard.portfolios
-                : dashboard.portfolios.where((p) {
-              final startup = _startups.firstWhere(
-                    (s) => s['id'] == p.startupId,
-                orElse: () => <String, dynamic>{},
-              );
-              return startup['stage'] == _filtroEstagio;
-            }).toList();
+                ? dashboardData.dashboard.portfolios
+                : dashboardData.dashboard.portfolios.where((p) {
+                    final startup = dashboardData.startups.firstWhere(
+                      (s) => s['id'] == p.startupId,
+                      orElse: () => <String, dynamic>{},
+                    );
+                    return startup['stage'] == _filtroEstagio;
+                  }).toList();
 
             return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header com saudação
-                  DashboardHeader(nomeUsuario: _nomeUsuario),
+                  DashboardHeader(nomeUsuario: dashboardData.nomeUsuario),
 
                   // Card de saldo com variação calculada
                   FutureBuilder<double>(
@@ -190,7 +109,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       final saldo = saldoSnap.data ?? 0.0;
                       return DashboardSaldoCard(
                         saldo: saldo,
-                        totalInvestido: dashboard.totalInvestidoEmReais,
+                        totalInvestido: dashboardData.dashboard.totalInvestidoEmReais,
                         saldoVisivel: _saldoVisivel,
                         onToggleSaldo: _toggleSaldo,
                         // Ao voltar do balcão recarrega o dashboard
@@ -213,8 +132,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   // Seção de meus investimentos
                   DashboardInvestimentos(
                     portfolios: portfoliosFiltrados,
-                    startups: _startups,
-                    priceHistoryMap: _priceHistoryMap,
+                    startups: dashboardData.startups,
+                    priceHistoryMap: dashboardData.priceHistoryMap,
                     filtroEstagio: _filtroEstagio,
                     onFiltroChanged: _setFiltro,
                     // Ao voltar da tela de detalhes recarrega o dashboard

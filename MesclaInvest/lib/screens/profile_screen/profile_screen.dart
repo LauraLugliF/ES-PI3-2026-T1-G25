@@ -1,5 +1,4 @@
 //Max Thomazini Barbosa RA:25003934
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import '../../widgets/app_bottom_navigation.dart';

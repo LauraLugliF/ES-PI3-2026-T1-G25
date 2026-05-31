@@ -70,147 +70,104 @@ class StartupDetailHeader extends StatelessWidget {
     // Pega a inicial do nome para o avatar
     final inicial = nome.isNotEmpty ? nome[0].toUpperCase() : '?';
 
-    // Calcula o percentual da meta já atingido
-    final pctMeta = metaCapital > 0
-        ? ((capitalAportado / metaCapital) * 100).toStringAsFixed(0)
-        : '0';
-
-    // Retorna o card principal do header
     return _DetailCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Linha com avatar, nome e badge de estágio
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Avatar com a inicial do nome da startup
               Container(
-                width: 46,
-                height: 46,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
-                  // Fundo azul claro para o avatar
-                  color: const Color(0xFFE8F0FE),
-                  // Bordas arredondadas do avatar
+                  color: const Color(0xFFE8F5F1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
-                  // Exibe a inicial em destaque
                   child: Text(
                     inicial,
                     style: const TextStyle(
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF1A73E8),
+                      color: Color(0xFF0F5946),
                     ),
                   ),
                 ),
               ),
-              // Espaço entre avatar e textos
-              const SizedBox(width: 10),
-              // Coluna com nome, badge e categoria
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Linha com nome e badge
-                    Row(
-                      children: [
-                        // Nome da startup
-                        Text(
-                          nome,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF111111),
-                          ),
-                        ),
-                        // Espaço entre nome e badge
-                        const SizedBox(width: 6),
-                        // Badge colorido do estágio
-                        StartupStageBadge(estagio: estagio),
-                      ],
-                    ),
-                    // Espaço entre nome e categoria
-                    const SizedBox(height: 2),
-                    // Setor e ecossistema
                     Text(
-                      '$categoria · Ecossistema Mescla',
+                      nome,
                       style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF999999),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF111111),
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    StartupStageBadge(estagio: estagio),
                   ],
                 ),
               ),
-            ],
-          ),
-          // Espaço entre o topo e as métricas
-          const SizedBox(height: 12),
-
-          // Grade 2x2 com as métricas principais
-          GridView.count(
-            // Duas colunas na grade
-            crossAxisCount: 2,
-            // Não rola — faz parte do scroll da tela
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            // Espaçamento horizontal entre cards
-            crossAxisSpacing: 8,
-            // Espaçamento vertical entre cards
-            mainAxisSpacing: 8,
-            // Proporção largura/altura dos cards
-            childAspectRatio: 1.9,
-            children: [
-              // Card do preço do token
-              _MetricCard(
-                label: 'Preço do token',
-                value: 'R\$ ${precoToken.toStringAsFixed(2)}',
-                sub: '',
-                subColor: const Color(0xFF999999),
-              ),
-              // Card dos tokens emitidos
-              _MetricCard(
-                label: 'Tokens emitidos',
-                value: _fmt(tokensDisponiveis),
-                sub: '',
-                subColor: const Color(0xFF999999),
-              ),
-              // Card do capital já aportado
-              _MetricCard(
-                label: 'Capital já aportado',
-                value: 'R\$ ${_fmtCapital(capitalAportado)}',
-                sub: '',
-                subColor: kDetailPrimaryColor,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'R\$ ${precoToken.toStringAsFixed(2).replaceAll('.', ',')}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: kDetailPrimaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${variacaoMes >= 0 ? '+' : ''}${variacaoMes.toStringAsFixed(2).replaceAll('.', ',')}%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: variacaoMes >= 0 ? const Color(0xFF2E7D32) : const Color(0xFFD32F2F),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          // Espaço antes dos botões
           const SizedBox(height: 12),
-
-          // LUCAS RODRIGUES XAVIER - 25000508
-          // Montamos uma fileira com dois botões para todos os usuários:
-          // "Ver balcão" (cinza, para abrir a tela de negociação geral) e "Comprar" (verde, para negociar tokens desta startup)
           Row(
             children: [
-              // Botão ver balcão — fundo cinza
               Expanded(
-                child: _ActionButton(
-                  label: 'Ver balcão',
-                  filled: false,
-                  isGray: true,
-                  onPressed: onBalcao,
+                child: _MetricCard(
+                  label: 'Disponíveis',
+                  value: _fmt(tokensDisponiveis),
+                  sub: 'de ${_fmt(totalTokens)}',
+                  subColor: const Color(0xFF888888),
                 ),
               ),
-              // Espaço entre botões
-              const SizedBox(width: 7),
-              // Botão comprar — preenchido com cor primária
+              const SizedBox(width: 8),
               Expanded(
-                child: _ActionButton(
-                  label: 'Comprar',
-                  filled: true,
-                  onPressed: onComprar,
+                child: _MetricCard(
+                  label: 'Sócios',
+                  value: '${percentualSocios.toStringAsFixed(1)}%',
+                  sub: 'Capital R\$ ${_fmtCapital(capitalAportado)}',
+                  subColor: const Color(0xFF888888),
                 ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _ActionButton(label: 'Comprar', filled: true, onPressed: onComprar),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _ActionButton(label: 'Vender', filled: false, onPressed: onVender),
               ),
             ],
           ),
@@ -219,7 +176,6 @@ class StartupDetailHeader extends StatelessWidget {
     );
   }
 
-  // Formata número grande para exibição compacta ex: 1500000 → "1,5M"
   String _fmt(int v) {
     if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
     if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}K';
@@ -326,6 +282,18 @@ class _StartupPerformanceChartState extends State<StartupPerformanceChart> {
 
       if (createdAtRaw is String && createdAtRaw.isNotEmpty) {
         createdAt = DateTime.tryParse(createdAtRaw) ?? now;
+      } else if (createdAtRaw is DateTime) {
+        createdAt = createdAtRaw;
+      } else if (createdAtRaw is num) {
+        createdAt = DateTime.fromMillisecondsSinceEpoch(createdAtRaw.toInt());
+      } else if (createdAtRaw is Map) {
+        final seconds = (createdAtRaw['seconds'] ?? createdAtRaw['_seconds']) as num?;
+        final nanoseconds = (createdAtRaw['nanoseconds'] ?? createdAtRaw['_nanoseconds']) as num?;
+        if (seconds != null) {
+          createdAt = DateTime.fromMillisecondsSinceEpoch(
+            (seconds.toInt() * 1000) + ((nanoseconds?.toInt() ?? 0) ~/ 1000000),
+          );
+        }
       }
 
       return _ChartPoint(
@@ -336,95 +304,6 @@ class _StartupPerformanceChartState extends State<StartupPerformanceChart> {
       ..sort((left, right) => left.createdAt.compareTo(right.createdAt));
 
     return points;
-  }
-
-  List<_ChartPoint> _buildStepSeries(List<DateTime> buckets) {
-    final history = _historyForSelectedPeriod();
-    final now = DateTime.now();
-
-    if (buckets.isEmpty) {
-      return _normalizePoints([
-        _ChartPoint(price: widget.precoAtual, createdAt: now),
-      ]);
-    }
-
-    if (history.isEmpty) {
-      return _normalizePoints(
-        buckets
-            .map((bucket) => _ChartPoint(price: widget.precoAtual, createdAt: bucket))
-            .toList(),
-      );
-    }
-
-    final series = <_ChartPoint>[];
-    var historyIndex = 0;
-    var lastKnownPrice = history.first.price;
-
-    for (var i = 0; i < buckets.length; i++) {
-      final bucketStart = buckets[i];
-      final bucketEnd = i + 1 < buckets.length ? buckets[i + 1] : now.add(const Duration(seconds: 1));
-
-      while (historyIndex < history.length &&
-          !history[historyIndex].createdAt.isAfter(bucketEnd)) {
-        lastKnownPrice = history[historyIndex].price;
-        historyIndex++;
-      }
-
-      series.add(
-        _ChartPoint(
-          price: lastKnownPrice,
-          createdAt: bucketStart,
-        ),
-      );
-    }
-
-    return _normalizePoints(series);
-  }
-
-  List<DateTime> _periodBuckets() {
-    final now = DateTime.now();
-
-    switch (_periodo) {
-      case '1D':
-        final dayStart = DateTime(now.year, now.month, now.day);
-        return List.generate(24, (index) => dayStart.add(Duration(hours: index)));
-      case '1S':
-        final weekStart = DateTime(now.year, now.month, now.day).subtract(
-          Duration(days: now.weekday % 7),
-        );
-        return List.generate(7, (index) => weekStart.add(Duration(days: index)));
-      case '1M':
-        final monthStart = DateTime(now.year, now.month, 1);
-        return List.generate(4, (index) => monthStart.add(Duration(days: index * 7)));
-      case '6M':
-        final startMonth = DateTime(now.year, now.month - 6, 1);
-        return List.generate(7, (index) {
-          return DateTime(startMonth.year, startMonth.month + index, 1);
-        });
-      case 'YTD':
-        final startMonth = DateTime(now.year - 1, now.month, 1);
-        return List.generate(13, (index) {
-          return DateTime(startMonth.year, startMonth.month + index, 1);
-        });
-      case 'Tudo':
-        return _summaryBuckets();
-      default:
-        return [DateTime(now.year, now.month, now.day)];
-    }
-  }
-
-  List<DateTime> _summaryBuckets() {
-    final history = _parseHistoryPoints();
-    if (history.length <= 3) {
-      return history.map((point) => point.createdAt).toList();
-    }
-
-    return [
-      history.first.createdAt,
-      history[(history.length * 0.33).floor()].createdAt,
-      history[(history.length * 0.66).floor()].createdAt,
-      history.last.createdAt,
-    ];
   }
 
   List<_ChartPoint> _normalizePoints(List<_ChartPoint> points) {
@@ -447,73 +326,133 @@ class _StartupPerformanceChartState extends State<StartupPerformanceChart> {
     return points;
   }
 
+  List<_ChartPoint> _aggregateByDay(List<_ChartPoint> points) {
+    final byDay = <String, _ChartPoint>{};
+    for (final point in points) {
+      final key =
+          '${point.createdAt.year}-${point.createdAt.month.toString().padLeft(2, '0')}-${point.createdAt.day.toString().padLeft(2, '0')}';
+      byDay[key] = point;
+    }
+
+    return (byDay.values.toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt)))
+        .map((point) => _ChartPoint(
+              price: point.price,
+              createdAt: DateTime(point.createdAt.year, point.createdAt.month, point.createdAt.day),
+            ))
+        .toList();
+  }
+
+  List<_ChartPoint> _aggregateByWeek(List<_ChartPoint> points) {
+    final byWeek = <String, _ChartPoint>{};
+    for (final point in points) {
+      final key = '${point.createdAt.year}-${_isoWeekNumber(point.createdAt)}';
+      byWeek[key] = point;
+    }
+    return byWeek.values.toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+  }
+
+  List<_ChartPoint> _aggregateByMonth(List<_ChartPoint> points) {
+    final byMonth = <String, _ChartPoint>{};
+    for (final point in points) {
+      final key =
+          '${point.createdAt.year}-${point.createdAt.month.toString().padLeft(2, '0')}';
+      byMonth[key] = point;
+    }
+
+    return (byMonth.values.toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt)))
+        .map((point) => _ChartPoint(
+              price: point.price,
+              createdAt: DateTime(point.createdAt.year, point.createdAt.month),
+            ))
+        .toList();
+  }
+
+  int _isoWeekNumber(DateTime date) {
+    final dayOfYear = date.difference(DateTime(date.year, 1, 1)).inDays + 1;
+    return ((dayOfYear - date.weekday + 10) / 7).floor();
+  }
+
+  List<DateTime> _periodBounds(String period) {
+    final now = DateTime.now();
+    switch (period) {
+      case '1D':
+        return [now.subtract(const Duration(hours: 24)), now];
+      case '1S':
+        return [now.subtract(const Duration(days: 7)), now];
+      case '1M':
+        return [now.subtract(const Duration(days: 28)), now];
+      case '6M':
+        return [now.subtract(const Duration(days: 182)), now];
+      case 'YTD':
+        return [DateTime(now.year, 1, 1), now];
+      default:
+        return [now.subtract(const Duration(hours: 24)), now];
+    }
+  }
+
+  _ChartPoint? _pointBefore(List<_ChartPoint> history, DateTime boundary) {
+    for (var i = history.length - 1; i >= 0; i--) {
+      if (!history[i].createdAt.isAfter(boundary)) return history[i];
+    }
+    return null;
+  }
+
   List<_ChartPoint> _historyForSelectedPeriod() {
     final history = _parseHistoryPoints();
-    final now = DateTime.now();
+    if (history.isEmpty) return history;
 
-    switch (_periodo) {
-      case '1D':
-        final start = DateTime(now.year, now.month, now.day);
-        final end = start.add(const Duration(days: 1));
-        return _filterHistoryInRange(history, start, end);
-      case '1S':
-        final start = DateTime(now.year, now.month, now.day).subtract(
-          Duration(days: now.weekday % 7),
-        );
-        final end = start.add(const Duration(days: 7));
-        return _filterHistoryInRange(history, start, end);
-      case '1M':
-        final start = DateTime(now.year, now.month, 1);
-        final end = DateTime(now.year, now.month + 1, 1);
-        return _filterHistoryInRange(history, start, end);
-      case '6M':
-        final start = DateTime(now.year, now.month - 6, 1);
-        return _filterHistoryInRange(history, start, now.add(const Duration(seconds: 1)));
-      case 'YTD':
-        final start = DateTime(now.year - 1, now.month, 1);
-        return _filterHistoryInRange(history, start, now.add(const Duration(seconds: 1)));
-      case 'Tudo':
-        return history;
-      default:
-        final start = DateTime(now.year, now.month, now.day);
-        final end = start.add(const Duration(days: 1));
-        return _filterHistoryInRange(history, start, end);
-    }
-  }
+    if (_periodo == 'Tudo') return history;
 
-  List<_ChartPoint> _filterHistoryInRange(
-    List<_ChartPoint> history,
-    DateTime start,
-    DateTime end,
-  ) {
+    final bounds = _periodBounds(_periodo);
+    final start = bounds[0];
+    final end = bounds[1];
+
     final filtered = history
         .where((point) =>
-            !point.createdAt.isBefore(start) && point.createdAt.isBefore(end))
+            !point.createdAt.isBefore(start) &&
+            (point.createdAt.isBefore(end) || point.createdAt.isAtSameMomentAs(end)))
         .toList();
 
-    if (filtered.isNotEmpty) {
-      return filtered;
+    final pointBeforeStart = _pointBefore(history, start);
+    final openPrice = pointBeforeStart?.price ??
+        (filtered.isNotEmpty ? filtered.first.price : history.first.price);
+
+    if (filtered.isEmpty) {
+      return [
+        _ChartPoint(price: openPrice, createdAt: start),
+        _ChartPoint(price: openPrice, createdAt: end),
+      ];
     }
 
-    return [history.last];
-  }
-
-  List<_ChartPoint> _recentSliceFallback(List<_ChartPoint> points) {
-    if (points.length <= 2) {
-      return _normalizePoints(points);
+    List<_ChartPoint> aggregated;
+    switch (_periodo) {
+      case '1D':
+        aggregated = filtered;
+        break;
+      case '1S':
+      case '1M':
+        aggregated = _aggregateByDay(filtered);
+        break;
+      case '6M':
+        aggregated = _aggregateByWeek(filtered);
+        break;
+      case 'YTD':
+        aggregated = _aggregateByMonth(filtered);
+        break;
+      default:
+        aggregated = filtered;
     }
 
-    final fallbackSizes = {
-      '1D': 2,
-      '1S': 3,
-      '1M': 5,
-      '6M': 8,
-      'YTD': 10,
-    };
+    final result = <_ChartPoint>[];
+    if (aggregated.isEmpty || aggregated.first.createdAt.isAfter(start)) {
+      result.add(_ChartPoint(price: openPrice, createdAt: start));
+    }
+    result.addAll(aggregated);
+    if (result.last.createdAt.isBefore(end)) {
+      result.add(_ChartPoint(price: result.last.price, createdAt: end));
+    }
 
-    final desiredSize = fallbackSizes[_periodo] ?? points.length;
-    final startIndex = (points.length - desiredSize).clamp(0, points.length - 1);
-    return _normalizePoints(points.sublist(startIndex));
+    return _normalizePoints(result);
   }
 
   String _weekdayLabel(int weekday) {
@@ -557,83 +496,68 @@ class _StartupPerformanceChartState extends State<StartupPerformanceChart> {
     return months[(month - 1).clamp(0, 11)];
   }
 
-  String _weekOfMonthLabel(DateTime value) {
-    final weekOfMonth = ((value.day - 1) ~/ 7) + 1;
-    return 'Sem $weekOfMonth';
-  }
-
   List<String> _chartDateLabels(List<_ChartPoint> points) {
     if (points.isEmpty) return const ['-', '-', '-'];
 
-    final first = points.first.createdAt;
-    final middle = points[points.length ~/ 2].createdAt;
-    final last = points.last.createdAt;
-
     switch (_periodo) {
       case '1D':
+        final bounds = _periodBounds('1D');
+        final mid = bounds[0].add(const Duration(hours: 12));
         return [
-          '${first.hour.toString().padLeft(2, '0')}h',
-          '${middle.hour.toString().padLeft(2, '0')}h',
-          '${last.hour.toString().padLeft(2, '0')}h',
+          '${bounds[0].hour.toString().padLeft(2, '0')}h',
+          '${mid.hour.toString().padLeft(2, '0')}h',
+          '${bounds[1].hour.toString().padLeft(2, '0')}h',
         ];
       case '1S':
+        final bounds = _periodBounds('1S');
+        final mid = bounds[0].add(const Duration(days: 3));
         return [
-          _weekdayLabel(first.weekday),
-          _weekdayLabel(middle.weekday),
-          _weekdayLabel(last.weekday),
+          _weekdayLabel(bounds[0].weekday % 7),
+          _weekdayLabel(mid.weekday % 7),
+          _weekdayLabel(bounds[1].weekday % 7),
         ];
       case '1M':
+        final bounds = _periodBounds('1M');
+        final mid = bounds[0].add(const Duration(days: 14));
         return [
-          _weekOfMonthLabel(first),
-          _weekOfMonthLabel(middle),
-          _weekOfMonthLabel(last),
+          _formatDateLabel(bounds[0]),
+          _formatDateLabel(mid),
+          _formatDateLabel(bounds[1]),
         ];
       case '6M':
+        final bounds = _periodBounds('6M');
+        final mid = bounds[0].add(const Duration(days: 91));
+        return [
+          _monthLabel(bounds[0].month),
+          _monthLabel(mid.month),
+          _monthLabel(bounds[1].month),
+        ];
       case 'YTD':
+        final now = DateTime.now();
+        final midMonth = ((1 + now.month) / 2).round();
         return [
-          _monthLabel(first.month),
-          _monthLabel(middle.month),
-          _monthLabel(last.month),
+          _monthLabel(1),
+          _monthLabel(midMonth),
+          _monthLabel(now.month),
         ];
       case 'Tudo':
-        return const ['Início', '', 'Atual'];
-      default:
+        if (points.length < 2) return const ['Início', '', 'Atual'];
         return [
-          _formatDateLabel(first),
-          _formatDateLabel(middle),
-          _formatDateLabel(last),
-        ];
-    }
-  }
-
-  List<String> _chartPriceLabels(List<_ChartPoint> points) {
-    if (points.isEmpty) return const ['R\$ 0,00', 'R\$ 0,00', 'R\$ 0,00'];
-
-    final prices = points.map((point) => point.price).toList();
-    final minPrice = prices.reduce(math.min);
-    final maxPrice = prices.reduce(math.max);
-    final midPrice = (minPrice + maxPrice) / 2;
-
-    String format(double value) => 'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}';
-
-    switch (_periodo) {
-      case 'Tudo':
-        return [
-          format(maxPrice),
+          _formatDateLabel(points.first.createdAt),
           '',
-          format(minPrice),
+          _formatDateLabel(points.last.createdAt),
         ];
       default:
         return [
-          format(maxPrice),
-          format(midPrice),
-          format(minPrice),
+          _formatDateLabel(points.first.createdAt),
+          _formatDateLabel(points[points.length ~/ 2].createdAt),
+          _formatDateLabel(points.last.createdAt),
         ];
     }
   }
 
   List<_ChartPoint> _filteredPoints() {
-    return _buildStepSeries(_periodBuckets());
+    return _historyForSelectedPeriod();
   }
 
   // Monta o card do gráfico com filtros
@@ -1521,8 +1445,6 @@ class _ActionButton extends StatelessWidget {
   final String label;
   // Define se o botão é preenchido ou apenas com borda
   final bool filled;
-  // Define se o botão tem fundo cinza
-  final bool isGray;
   // Ação executada ao tocar no botão
   final VoidCallback? onPressed;
 
@@ -1530,7 +1452,6 @@ class _ActionButton extends StatelessWidget {
   const _ActionButton({
     required this.label,
     required this.filled,
-    this.isGray = false,
     this.onPressed,
   });
 
@@ -1545,23 +1466,15 @@ class _ActionButton extends StatelessWidget {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           // Define a cor de fundo conforme o tipo do botão
-          backgroundColor: isGray
-              ? const Color(0xFFF5F5F5)
-              : filled
-              ? kDetailPrimaryColor
-              : Colors.white,
+          backgroundColor: filled ? kDetailPrimaryColor : Colors.white,
           // Define a cor do texto conforme o tipo do botão
-          foregroundColor: isGray
-              ? const Color(0xFF555555)
-              : filled
-              ? Colors.white
-              : kDetailPrimaryColor,
+          foregroundColor: filled ? Colors.white : kDetailPrimaryColor,
           // Remove a sombra do botão
           elevation: 0,
           // Borda apenas nos botões não preenchidos e não cinza
-          side: filled || isGray
-              ? BorderSide.none
-              : const BorderSide(color: kDetailPrimaryColor, width: 1.5),
+          side: filled
+            ? BorderSide.none
+            : const BorderSide(color: kDetailPrimaryColor, width: 1.5),
           // Bordas arredondadas
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(9),
@@ -1858,29 +1771,17 @@ class _PriceHistoryPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (points.isEmpty) {
-      return;
-    }
+    if (points.isEmpty) return;
 
-    final values = points.map((point) => point.price).toList();
-    final minPrice = values.reduce(math.min);
-    final maxPrice = values.reduce(math.max);
+    final prices = points.map((p) => p.price).toList();
+    final minPrice = prices.reduce(math.min);
+    final maxPrice = prices.reduce(math.max);
     final priceRange = (maxPrice - minPrice).abs();
 
-    final linePaint = Paint()
-      ..color = lineColor
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final gridPaint = Paint()
-      ..color = const Color(0xFFE8E8E8)
-      ..strokeWidth = 0.8;
-
-    final axisPaint = Paint()
-      ..color = const Color(0xFFD8D8D8)
-      ..strokeWidth = 1.1;
+    final times = points.map((p) => p.createdAt.millisecondsSinceEpoch).toList();
+    final minTime = times.first;
+    final maxTime = times.last;
+    final timeRange = (maxTime - minTime).abs();
 
     const leftPadding = 8.0;
     const rightPadding = 8.0;
@@ -1894,8 +1795,22 @@ class _PriceHistoryPainter extends CustomPainter {
       canvas.drawLine(
         Offset(leftPadding, y),
         Offset(size.width - rightPadding, y),
-        i == 2 ? axisPaint : gridPaint,
+        Paint()
+          ..color = i == 2 ? const Color(0xFFD8D8D8) : const Color(0xFFE8E8E8)
+          ..strokeWidth = i == 2 ? 1.1 : 0.8,
       );
+    }
+
+    final xFractions = List<double>.generate(points.length, (index) {
+      if (timeRange == 0) return points.length == 1 ? 0.5 : index / (points.length - 1);
+      return (times[index] - minTime) / timeRange;
+    });
+
+    Offset pointToOffset(int index) {
+      final x = leftPadding + (chartWidth * xFractions[index]);
+      final normalized = priceRange == 0 ? 0.5 : (prices[index] - minPrice) / priceRange;
+      final y = topPadding + (chartHeight * (1 - normalized));
+      return Offset(x, y);
     }
 
     final fillPaint = Paint()
@@ -1909,59 +1824,54 @@ class _PriceHistoryPainter extends CustomPainter {
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..style = PaintingStyle.fill;
 
-    final path = Path();
+    final linePath = Path();
     final fillPath = Path();
-    final horizontalPadding = leftPadding;
-    final usableWidth = chartWidth;
-    final usableHeight = math.max(1.0, chartHeight);
-    final pointSpacingDivisor = math.max(1, points.length - 1);
 
-    for (var index = 0; index < points.length; index++) {
-      final x = horizontalPadding + (usableWidth * index / pointSpacingDivisor);
-      final normalized = priceRange == 0
-          ? 0.5
-          : (points[index].price - minPrice) / priceRange;
-      final y = topPadding + (usableHeight * (1 - normalized));
-
-      if (index == 0) {
-        path.moveTo(x, y);
-        fillPath.moveTo(x, y);
+    for (var i = 0; i < points.length; i++) {
+      final o = pointToOffset(i);
+      if (i == 0) {
+        linePath.moveTo(o.dx, o.dy);
+        fillPath.moveTo(o.dx, o.dy);
       } else {
-        path.lineTo(x, y);
-        fillPath.lineTo(x, y);
+        linePath.lineTo(o.dx, o.dy);
+        fillPath.lineTo(o.dx, o.dy);
       }
     }
 
     fillPath.lineTo(size.width - rightPadding, size.height - bottomPadding);
-    fillPath.lineTo(horizontalPadding, size.height - bottomPadding);
+    fillPath.lineTo(leftPadding, size.height - bottomPadding);
     fillPath.close();
 
     canvas.drawPath(fillPath, fillPaint);
-    canvas.drawPath(path, linePaint);
+    canvas.drawPath(
+      linePath,
+      Paint()
+        ..color = lineColor
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
 
-    for (var index = 0; index < points.length; index++) {
-      final point = points[index];
-      final x = horizontalPadding +
-          (usableWidth * index / pointSpacingDivisor);
-      final normalized = priceRange == 0
-          ? 0.5
-          : (point.price - minPrice) / priceRange;
-      final y = topPadding + (usableHeight * (1 - normalized));
-      canvas.drawCircle(
-        Offset(x, y),
-        2.2,
-        Paint()..color = lineColor,
-      );
+    for (var i = 0; i < points.length; i++) {
+      canvas.drawCircle(pointToOffset(i), 2.2, Paint()..color = lineColor);
+    }
 
-      final isChangePoint = index == 0 || point.price != points[index - 1].price;
-      if (!isChangePoint) {
-        continue;
-      }
+    final minIndex = prices.indexOf(prices.reduce(math.min));
+    final maxIndex = prices.indexOf(prices.reduce(math.max));
+    final lastIndex = points.length - 1;
 
-      final label = _formatCurrency(point.price);
-      final textPainter = TextPainter(
+    final candidates = <int>{0, minIndex, maxIndex, lastIndex};
+    final usedRects = <Rect>[];
+
+    void tryDrawLabel(int index) {
+      final o = pointToOffset(index);
+      const lhp = 4.0;
+      const lvp = 2.5;
+
+      final tp = TextPainter(
         text: TextSpan(
-          text: label,
+          text: _formatCurrency(prices[index]),
           style: const TextStyle(
             color: kDetailPrimaryColor,
             fontSize: 8.5,
@@ -1972,52 +1882,41 @@ class _PriceHistoryPainter extends CustomPainter {
         textAlign: TextAlign.center,
       )..layout(maxWidth: 72);
 
-      const labelHorizontalPadding = 4.0;
-      const labelVerticalPadding = 2.5;
-      final labelWidth = textPainter.width + (labelHorizontalPadding * 2);
-      final labelHeight = textPainter.height + (labelVerticalPadding * 2);
-      final labelLeft = (x - labelWidth / 2)
-          .clamp(4.0, size.width - labelWidth - 4.0)
-          .toDouble();
-      final placeAbove = y > size.height / 2;
-      final topCandidate = placeAbove
-          ? y - labelHeight - 12.0
-          : y + 12.0;
-      final labelTop = topCandidate
-          .clamp(4.0, size.height - labelHeight - 4.0)
-          .toDouble();
+      final lw = tp.width + lhp * 2;
+      final lh = tp.height + lvp * 2;
+      final lx = (o.dx - lw / 2).clamp(4.0, size.width - lw - 4.0);
+      final placeAbove = o.dy > size.height / 2;
+      final lt = (placeAbove ? o.dy - lh - 12.0 : o.dy + 12.0).clamp(4.0, size.height - lh - 4.0);
 
-      final pointerPath = Path()
-        ..moveTo(x, y)
-        ..lineTo(x, placeAbove ? labelTop + labelHeight : labelTop);
+      const margin = 6.0;
+      final candidateRect = Rect.fromLTWH(lx - margin, lt - margin, lw + margin * 2, lh + margin * 2);
+      if (usedRects.any((r) => r.overlaps(candidateRect))) return;
+      usedRects.add(candidateRect);
 
-      final labelRect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(labelLeft, labelTop, labelWidth, labelHeight),
-        const Radius.circular(8),
+      canvas.drawPath(
+        Path()
+          ..moveTo(o.dx, o.dy)
+          ..lineTo(o.dx, placeAbove ? lt + lh : lt),
+        Paint()
+          ..color = lineColor.withValues(alpha: 0.45)
+          ..strokeWidth = 0.9
+          ..style = PaintingStyle.stroke,
       );
 
-      final labelPaint = Paint()
-        ..color = const Color(0xFFF8FCFA)
-        ..style = PaintingStyle.fill;
+      final rrect = RRect.fromRectAndRadius(Rect.fromLTWH(lx, lt, lw, lh), const Radius.circular(8));
+      canvas.drawRRect(rrect, Paint()..color = const Color(0xFFF8FCFA)..style = PaintingStyle.fill);
+      canvas.drawRRect(
+          rrect,
+          Paint()
+            ..color = lineColor.withValues(alpha: 0.45)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.0);
 
-      final labelBorderPaint = Paint()
-        ..color = lineColor.withValues(alpha: 0.45)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0;
+      tp.paint(canvas, Offset(lx + lhp, lt + lvp));
+    }
 
-      final pointerPaint = Paint()
-        ..color = lineColor.withValues(alpha: 0.45)
-        ..strokeWidth = 0.9
-        ..style = PaintingStyle.stroke;
-
-      canvas.drawPath(pointerPath, pointerPaint);
-
-      canvas.drawRRect(labelRect, labelPaint);
-      canvas.drawRRect(labelRect, labelBorderPaint);
-      textPainter.paint(
-        canvas,
-        Offset(labelLeft + labelHorizontalPadding, labelTop + labelVerticalPadding),
-      );
+    for (final index in [lastIndex, maxIndex, minIndex, 0]) {
+      if (candidates.contains(index)) tryDrawLabel(index);
     }
   }
 

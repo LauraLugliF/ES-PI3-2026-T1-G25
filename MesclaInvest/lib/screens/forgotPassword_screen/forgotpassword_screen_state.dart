@@ -6,6 +6,8 @@ part of 'forgotpassword_screen.dart';
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   // Controla os dados e a lógica da tela de login.
   final _emailController = TextEditingController();
+  // Centraliza a regra de envio do e-mail de recuperação.
+  final ForgotPasswordService _forgotPasswordService = ForgotPasswordService();
   // Guarda a mensagem exibida após tentar entrar.
   String? _emailMessage;
 
@@ -105,7 +107,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 onPressed: _canSubmit
                     ? () async {
                         // Envia o e-mail para a função de enviar email.
-                        final message = await submitEmail(
+                        final message = await _forgotPasswordService.submitEmail(
                           // Passa o texto atual do e-mail.
                           _emailController.text,
                         );

@@ -42,6 +42,7 @@ const userRepository_1 = require("../repositories/userRepository");
 const startupRepository_1 = require("../repositories/startupRepository");
 const portfolioRepository_1 = require("../repositories/portfolioRepository");
 const transactionRepository_1 = require("../repositories/transactionRepository");
+const startupRepository_2 = require("../../startups/repositories/startupRepository");
 exports.buyTokensHandler = (0, https_1.onRequest)({ region: "southamerica-east1", invoker: "public" }, async (request, response) => {
     var _a, _b, _c, _d;
     try {
@@ -68,24 +69,26 @@ exports.buyTokensHandler = (0, https_1.onRequest)({ region: "southamerica-east1"
             response.status(404).send("Startup não encontrada");
             return;
         }
-        // Calcular o valor total
-        const precoTotal = Math.floor(quantidade * precoUnitario);
+        // Calcular o valor total em centavos para saldo e capital da startup.
+        const precoTotalCents = Math.floor(quantidade * precoUnitario * 100);
         // Verificar se o usuário tem saldo suficiente
         const saldoDisponivel = await (0, userRepository_1.getUserBalance)(userId);
-        if (saldoDisponivel === null || saldoDisponivel < precoTotal) {
+        if (saldoDisponivel === null || saldoDisponivel < precoTotalCents) {
             response.status(400).send("Saldo insuficiente para essa compra");
             return;
         }
         // Deduzir o saldo da conta do usuário
-        await (0, userRepository_1.deduzirSaldoUsuario)(userId, precoTotal);
+        await (0, userRepository_1.deduzirSaldoUsuario)(userId, precoTotalCents);
         // Adicionar tokens ao portfólio
         const portfolio = await (0, portfolioRepository_1.adicionarTokensAoPortfolio)(userId, startupId, quantidade, precoUnitario);
+        const startupAtualizada = await (0, startupRepository_2.atualizarStartupAposCompra)(startupId, quantidade, precoTotalCents);
         // Registrar a transação
         const transacao = await (0, transactionRepository_1.criarTransacao)("compra", userId, startupId, quantidade, precoUnitario);
         response.status(200).send({
             sucesso: true,
             mensagem: "Compra realizada com sucesso",
             portfolio,
+            startup: startupAtualizada,
             transacao,
         });
     }

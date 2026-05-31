@@ -10,12 +10,18 @@ import '../../repositories/startup_repository.dart';
 import '../../widgets/startups_detalhadas_widgets.dart';
 
 // Modelo estrutural para os períodos do gráfico
+// ==========================================
+// ESTRUTURAS DE DADOS AUXILIARES (MODELS)
+// ==========================================
+
+// Armazena as informações financeiras processadas para um determinado período (Ex: 1M, 6M)
+// facilitando a renderização dinâmica do cabeçalho da tela.
 class PeriodData {
-  final List<double> pts;
-  final String label;
-  final String valVar;
-  final String pct;
-  final String preco;
+  final List<double> pts; // Lista de preços que compõem o gráfico (amostras)
+  final String label;     // Texto descritivo do período (ex: "último mês")
+  final String valVar;    // Variação nominal em reais (ex: "+ R$ 1,50")
+  final String pct;       // Variação percentual (ex: "+15,00%")
+  final String preco;     // Preço do token formatado ao final do período
 
   PeriodData({
     required this.pts,
@@ -26,16 +32,22 @@ class PeriodData {
   });
 }
 
+// Representa um único ponto de preço histórico recuperado do banco de dados (Firestore)
 class _PriceHistoryPoint {
-  final double price;
-  final DateTime createdAt;
+  final double price;          // Valor do token convertida em Reais
+  final DateTime createdAt;    // Carimbo de data/hora em que o preço foi registrado
 
   const _PriceHistoryPoint({required this.price, required this.createdAt});
 }
 
+// ==========================================
+// TELA DE DETALHES DE PORTFÓLIO E TOKEN
+// ==========================================
+// Widget com estado responsável por exibir métricas de posse (saldo do usuário),
+// histórico gráfico interativo de preço do token da startup e rendimentos.
 class DetalhesTokenScreen extends StatefulWidget {
-  final TokenPortfolio portfolio;
-  final Map<String, dynamic> startup;
+  final TokenPortfolio portfolio;   // Dados de posse do usuário (quantidade e preço médio)
+  final Map<String, dynamic> startup; // Dados cadastrais e preço atual da startup no banco
 
   const DetalhesTokenScreen({
     super.key,
@@ -48,11 +60,12 @@ class DetalhesTokenScreen extends StatefulWidget {
 }
 
 class _DetalhesTokenScreenState extends State<DetalhesTokenScreen> {
-  String _selectedPeriod = '1M';
-  final StartupRepository _startupRepository = StartupRepository();
-  List<Map<String, dynamic>> _priceHistory = [];
-  final List<String> _availablePeriods = const ['1D', '1S', '1M', '6M', 'YTD', 'Tudo'];
+  String _selectedPeriod = '1M'; // Período gráfico ativo no seletor (padrão: 1 mês)
+  final StartupRepository _startupRepository = StartupRepository(); // Repositório para consultar dados da startup
+  List<Map<String, dynamic>> _priceHistory = []; // Cache local do histórico de preço completo
+  final List<String> _availablePeriods = const ['1D', '1S', '1M', '6M', 'YTD', 'Tudo']; // Opções do seletor
 
+  // Mapeia o histórico de preços bruto para o modelo estruturado de cada período disponível
   Map<String, PeriodData> _periodsForHistory(List<Map<String, dynamic>> rawHistory) {
     return {
       '1D': _buildPeriodData('1D', rawHistory),
@@ -64,13 +77,16 @@ class _DetalhesTokenScreenState extends State<DetalhesTokenScreen> {
     };
   }
 
+  // Inicializa o estado buscando o histórico de preço da startup ativa
   @override
   void initState() {
     super.initState();
+    // Tenta ler o histórico que já veio pré-carregado no argumento do widget
     final existingHistory = _startupPriceHistory(widget.startup);
     if (existingHistory.isNotEmpty) {
       _priceHistory = existingHistory;
     } else {
+      // Se não existir, faz uma requisição assíncrona ao banco para baixar
       _loadPriceHistory().then((value) {
         if (!mounted) return;
         setState(() => _priceHistory = value);
@@ -128,9 +144,9 @@ class _DetalhesTokenScreenState extends State<DetalhesTokenScreen> {
   }
 
   List<_PriceHistoryPoint> _historyForPeriod(
-    String period,
-    List<Map<String, dynamic>> rawHistory,
-  ) {
+      String period,
+      List<Map<String, dynamic>> rawHistory,
+      ) {
     final history = _parseHistoryPoints(rawHistory);
     if (history.isEmpty) return history;
 
@@ -142,8 +158,8 @@ class _DetalhesTokenScreenState extends State<DetalhesTokenScreen> {
 
     final filtered = history
         .where((p) =>
-            !p.createdAt.isBefore(start) &&
-            (p.createdAt.isBefore(end) || p.createdAt.isAtSameMomentAs(end)))
+    !p.createdAt.isBefore(start) &&
+        (p.createdAt.isBefore(end) || p.createdAt.isAtSameMomentAs(end)))
         .toList();
 
     // Preço de abertura: último ponto antes do início do período
@@ -208,9 +224,9 @@ class _DetalhesTokenScreenState extends State<DetalhesTokenScreen> {
     }
     return (byDay.values.toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt)))
         .map((p) => _PriceHistoryPoint(
-              price: p.price,
-              createdAt: DateTime(p.createdAt.year, p.createdAt.month, p.createdAt.day),
-            ))
+      price: p.price,
+      createdAt: DateTime(p.createdAt.year, p.createdAt.month, p.createdAt.day),
+    ))
         .toList();
   }
 
@@ -234,9 +250,9 @@ class _DetalhesTokenScreenState extends State<DetalhesTokenScreen> {
     }
     return (byMonth.values.toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt)))
         .map((p) => _PriceHistoryPoint(
-              price: p.price,
-              createdAt: DateTime(p.createdAt.year, p.createdAt.month),
-            ))
+      price: p.price,
+      createdAt: DateTime(p.createdAt.year, p.createdAt.month),
+    ))
         .toList();
   }
 
@@ -271,12 +287,6 @@ class _DetalhesTokenScreenState extends State<DetalhesTokenScreen> {
     return null;
   }
 
-  _PriceHistoryPoint? _pointAfter(List<_PriceHistoryPoint> history, DateTime boundary) {
-    for (final p in history) {
-      if (!p.createdAt.isBefore(boundary)) return p;
-    }
-    return null;
-  }
 
   List<_PriceHistoryPoint> _normalizeHistory(List<_PriceHistoryPoint> history) {
     if (history.isEmpty) {
@@ -463,6 +473,20 @@ class _DetalhesTokenScreenState extends State<DetalhesTokenScreen> {
     );
   }
 
+  // Laura Lugli Fonseca Pereira RA: 25000739
+  // Calcula a variação percentual do token para um período específico
+  // usando o histórico de preço real do backend
+  String _calcularVariacaoPeriodo(
+      String period,
+      List<Map<String, dynamic>> rawHistory,
+      ) {
+    // Se não houver histórico retorna traço
+    if (rawHistory.isEmpty) return '-';
+
+    final data = _buildPeriodData(period, rawHistory);
+    return data.pct;
+  }
+
   String _formatCurrency(double value) {
     return 'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}';
   }
@@ -505,6 +529,15 @@ class _DetalhesTokenScreenState extends State<DetalhesTokenScreen> {
     final dateLabels = _chartDateLabels(selectedHistory);
     final valorTotalInvestido = widget.portfolio.totalInvestidoEmReais;
     final valorAtualInvestido = _currentInvestmentValue();
+
+    // Laura Lugli Fonseca Pereira RA: 25000739
+    // Calcula a variação de cada período com dados reais do histórico
+    // em vez de valores estáticos hardcoded
+    final variacaoHoje = _calcularVariacaoPeriodo('1D', rawHistory);
+    final variacaoSemana = _calcularVariacaoPeriodo('1S', rawHistory);
+    final variacaoMes = _calcularVariacaoPeriodo('1M', rawHistory);
+    final variacao6Meses = _calcularVariacaoPeriodo('6M', rawHistory);
+    final variacaoYTD = _calcularVariacaoPeriodo('YTD', rawHistory);
 
     return Scaffold(
       appBar: AppBar(
@@ -740,20 +773,20 @@ class _DetalhesTokenScreenState extends State<DetalhesTokenScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: dateLabels
                       .map((label) => Text(
-                            label,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Color(0xFFAAAAAA),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ))
+                    label,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFFAAAAAA),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ))
                       .toList(),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children:
-                      _availablePeriods.map((k) => _buildPeriodButton(k)).toList(),
+                  _availablePeriods.map((k) => _buildPeriodButton(k)).toList(),
                 )
               ],
             ),
@@ -761,6 +794,8 @@ class _DetalhesTokenScreenState extends State<DetalhesTokenScreen> {
           const SizedBox(height: 14),
 
           // --- SEÇÃO RENDIMENTO POR PERÍODO ---
+          // Laura Lugli Fonseca Pereira RA: 25000739
+          // Valores calculados dinamicamente com o histórico de preço real
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             child: Text(
@@ -780,16 +815,16 @@ class _DetalhesTokenScreenState extends State<DetalhesTokenScreen> {
               children: [
                 Row(
                   children: [
-                    _buildStatItem('Hoje', '+2,12%', true),
-                    _buildStatItem('Semana', '+14,67%', true),
-                    _buildStatItem('Mês', '+21,95%', false),
+                    _buildStatItem('Hoje', variacaoHoje, true),
+                    _buildStatItem('Semana', variacaoSemana, true),
+                    _buildStatItem('Mês', variacaoMes, false),
                   ],
                 ),
                 Container(height: 0.5, color: const Color(0xFFF2F2F2)),
                 Row(
                   children: [
-                    _buildStatItem('6 Meses', '+108,3%', true),
-                    _buildStatItem('YTD', '+212,5%', true),
+                    _buildStatItem('6 Meses', variacao6Meses, true),
+                    _buildStatItem('YTD', variacaoYTD, true),
                     _buildStatItem('Lucro total', lucroText, false),
                   ],
                 ),
@@ -881,14 +916,20 @@ class _DetalhesTokenScreenState extends State<DetalhesTokenScreen> {
     );
   }
 
+  // Laura Lugli Fonseca Pereira RA: 25000739
+  // Cor da variação: verde para positivo, vermelho para negativo
   Widget _buildStatItem(String title, String value, bool showBorderRight) {
+    final valueColor = value.startsWith('-') && value != '-'
+        ? const Color(0xFFD32F2F)
+        : const Color(0xFF1A9A6C);
+
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           border: showBorderRight
               ? const Border(
-                  right: BorderSide(color: Color(0xFFF2F2F2), width: 0.5))
+              right: BorderSide(color: Color(0xFFF2F2F2), width: 0.5))
               : null,
         ),
         child: Column(
@@ -899,10 +940,10 @@ class _DetalhesTokenScreenState extends State<DetalhesTokenScreen> {
             const SizedBox(height: 3),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF1A9A6C),
+                color: valueColor,
               ),
             ),
           ],
@@ -912,13 +953,19 @@ class _DetalhesTokenScreenState extends State<DetalhesTokenScreen> {
   }
 }
 
-// --- DESENHADOR CUSTOMIZADO DO GRÁFICO ---
+// ==========================================
+// DESENHADOR CUSTOMIZADO DO GRÁFICO (PAINTER)
+// ==========================================
+// Desenha um gráfico de linha contínua suavizada com preenchimento em degradê.
+// Traça linhas de grade de fundo, pontos discretos em cada data do histórico e balões
+// inteligentes contendo o valor do token sem gerar colisões visuais.
 class _ChartPainter extends CustomPainter {
-  final List<_PriceHistoryPoint> points;
-  final Color lineColor = kDetailPrimaryColor;
+  final List<_PriceHistoryPoint> points; // Lista de pontos contendo preços e datas
+  final Color lineColor = kDetailPrimaryColor; // Cor da linha (verde)
 
   _ChartPainter({required this.points});
 
+  // Auxiliar para formatar preços em moeda Real (ex: 2.5 -> R$ 2,50)
   String _formatCurrency(double value) {
     return 'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}';
   }
@@ -933,7 +980,7 @@ class _ChartPainter extends CustomPainter {
     final priceRange = (maxPrice - minPrice).abs();
 
     final times =
-        points.map((p) => p.createdAt.millisecondsSinceEpoch).toList();
+    points.map((p) => p.createdAt.millisecondsSinceEpoch).toList();
     final minTime = times.first;
     final maxTime = times.last;
     final timeRange = (maxTime - minTime).abs();
@@ -970,7 +1017,7 @@ class _ChartPainter extends CustomPainter {
     Offset pointToOffset(int index) {
       final x = leftPadding + (chartWidth * xFractions[index]);
       final normalized =
-          priceRange == 0 ? 0.5 : (prices[index] - minPrice) / priceRange;
+      priceRange == 0 ? 0.5 : (prices[index] - minPrice) / priceRange;
       final y = topPadding + (chartHeight * (1 - normalized));
       return Offset(x, y);
     }
@@ -1060,7 +1107,7 @@ class _ChartPainter extends CustomPainter {
 
       const margin = 6.0;
       final candidateRect =
-          Rect.fromLTWH(lx - margin, lt - margin, lw + margin * 2, lh + margin * 2);
+      Rect.fromLTWH(lx - margin, lt - margin, lw + margin * 2, lh + margin * 2);
       if (usedRects.any((r) => r.overlaps(candidateRect))) return;
       usedRects.add(candidateRect);
 

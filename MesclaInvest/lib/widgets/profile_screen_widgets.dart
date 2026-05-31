@@ -1,9 +1,10 @@
 //Max Thomazini Barbosa RA: 25003934
-//Max Thomazini Barbosa RA:25003934
+// Reune os widgets usados pela tela de perfil para manter o state enxuto.
 import 'package:flutter/material.dart';
 
 import '../models/profile_data_model.dart';
 
+// Exibe o titulo superior da tela de perfil.
 class ProfilePageHeader extends StatelessWidget {
   const ProfilePageHeader({super.key});
 
@@ -29,7 +30,9 @@ class ProfilePageHeader extends StatelessWidget {
   }
 }
 
+// Mostra os dados principais do usuario e a data aproximada de entrada.
 class ProfileMainCard extends StatelessWidget {
+  // Recebe os dados consolidados do perfil para exibicao.
   const ProfileMainCard({
     super.key,
     required this.profileData,
@@ -71,9 +74,9 @@ class ProfileMainCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Investidor desde maio 2026',
-            style: TextStyle(
+          Text(
+            _buildInvestorSinceText(profileData.createdAt),
+            style: const TextStyle(
               fontSize: 14,
               color: Color(0xFF8B9297),
             ),
@@ -82,9 +85,35 @@ class ProfileMainCard extends StatelessWidget {
       ),
     );
   }
+
+  String _buildInvestorSinceText(DateTime? createdAt) {
+    if (createdAt == null) {
+      return 'Investidor desde data não informada';
+    }
+
+    const months = [
+      'janeiro',
+      'fevereiro',
+      'março',
+      'abril',
+      'maio',
+      'junho',
+      'julho',
+      'agosto',
+      'setembro',
+      'outubro',
+      'novembro',
+      'dezembro',
+    ];
+
+    final monthName = months[createdAt.month - 1];
+    return 'Investidor desde ${createdAt.day} de $monthName de ${createdAt.year}';
+  }
 }
 
+// Exibe o nome da secao para separar visualmente os blocos.
 class ProfileSectionTitle extends StatelessWidget {
+  // Recebe o texto do titulo da secao.
   const ProfileSectionTitle({
     super.key,
     required this.title,
@@ -105,7 +134,9 @@ class ProfileSectionTitle extends StatelessWidget {
   }
 }
 
+// Mostra os dados cadastrais da conta em linhas separadas.
 class ProfileAccountDataCard extends StatelessWidget {
+  // Recebe o perfil consolidado para renderizar os campos.
   const ProfileAccountDataCard({
     super.key,
     required this.profileData,
@@ -126,14 +157,16 @@ class ProfileAccountDataCard extends StatelessWidget {
           const _ProfileDivider(),
           _ProfileInfoRow(icon: Icons.phone_outlined, title: 'Telefone', value: profileData.phone),
           const _ProfileDivider(),
-          const _ProfileInfoRow(icon: Icons.calendar_today_outlined, title: 'CPF', value: '... ... ...-12'),
+          _ProfileInfoRow(icon: Icons.calendar_today_outlined, title: 'CPF', value: profileData.cpf),
         ],
       ),
     );
   }
 }
 
+// Apresenta o estado do 2FA e a acao principal associada.
 class ProfileSecurityCard extends StatelessWidget {
+  // Recebe flags e callback para atualizar ou ativar o MFA.
   const ProfileSecurityCard({
     super.key,
     required this.isMfaStatusLoading,
@@ -267,7 +300,9 @@ class ProfileSecurityCard extends StatelessWidget {
   }
 }
 
+// Exibe o botao de logout com feedback de carregamento.
 class ProfileLogoutCard extends StatelessWidget {
+  // Recebe o callback de logout e o estado de carregamento.
   const ProfileLogoutCard({
     super.key,
     required this.onTap,
@@ -330,7 +365,9 @@ class ProfileLogoutCard extends StatelessWidget {
   }
 }
 
+// Linha reutilizavel para um campo cadastral do usuario.
 class _ProfileInfoRow extends StatelessWidget {
+  // Recebe icone, titulo e valor a serem exibidos.
   const _ProfileInfoRow({
     required this.icon,
     required this.title,
@@ -395,11 +432,14 @@ class _ProfileIconContainer extends StatelessWidget {
   }
 }
 
+// Desenha um separador sutil entre duas linhas de informacao.
 class _ProfileDivider extends StatelessWidget {
   const _ProfileDivider();
 
   @override
+// Container circular que destaca o icone do card de seguranca.
   Widget build(BuildContext context) {
+  // Recebe o icone interno do bloco.
     return Divider(
       height: 1,
       thickness: 1,

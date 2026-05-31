@@ -1,34 +1,36 @@
 //Max Thomazini Barbosa RA:25003934
+// Concentra a orquestracao do fluxo de envio e confirmacao do SMS.
 part of 'login_mfa_challenge.dart';
 
 class _LoginMfaChallengePageState extends State<LoginMfaChallengePage> {
+  // Controla a entrada do codigo SMS digitado pelo usuario.
   final _smsCodeController = TextEditingController();
+  // Abstrai a comunicacao com o Firebase para o fluxo MFA.
   final LoginMfaService _service = LoginMfaService();
 
+  // Guarda os fatores por telefone retornados pelo Firebase.
   late final List<PhoneMultiFactorInfo> _phoneHints;
 
+  // Indica qual fator de SMS esta selecionado quando ha mais de um.
   int _selectedHintIndex = 0;
+  // Evita envios duplicados do codigo enquanto a requisicao esta em andamento.
   bool _isSendingCode = false;
+  // Evita confirmar o codigo enquanto outra operacao esta em andamento.
   bool _isConfirming = false;
+  // Armazena o id necessario para validar o SMS informado.
   String? _verificationId;
+  // Mensagem de retorno exibida na interface.
   String? _message;
 
-  PhoneMultiFactorInfo? get _selectedHint {
-    if (_phoneHints.isEmpty) {
-      return null;
-    }
-    return _phoneHints[_selectedHintIndex];
+  // Expõe um modelo derivado com os dados necessarios para renderizacao.
+  LoginMfaChallengeModel get _model {
+    return LoginMfaChallengeModel(
+      phoneHints: _phoneHints,
+      selectedHintIndex: _selectedHintIndex,
+    );
   }
 
-  String? get _selectedPhoneNumber {
-    final hint = _selectedHint;
-    final phoneNumber = hint?.phoneNumber.trim();
-    if (phoneNumber == null || phoneNumber.isEmpty) {
-      return null;
-    }
-    return phoneNumber;
-  }
-
+  // Carrega os fatores de MFA e dispara o envio automatico do SMS inicial.
   @override
   void initState() {
     super.initState();
@@ -47,14 +49,16 @@ class _LoginMfaChallengePageState extends State<LoginMfaChallengePage> {
     });
   }
 
+  // Libera o controlador do campo de SMS quando a tela sai da arvore.
   @override
   void dispose() {
     _smsCodeController.dispose();
     super.dispose();
   }
 
+  // Solicita o envio de um novo SMS para o fator selecionado.
   Future<void> _sendSmsCode() async {
-    final hint = _selectedHint;
+    final hint = _model.selectedHint;
     if (hint == null || _isSendingCode || _isConfirming) {
       return;
     }
@@ -128,6 +132,7 @@ class _LoginMfaChallengePageState extends State<LoginMfaChallengePage> {
     }
   }
 
+  // Confirma o codigo informado e conclui o desafio MFA.
   Future<void> _confirmSmsCode() async {
     if (_isConfirming || _isSendingCode) {
       return;
@@ -184,63 +189,32 @@ class _LoginMfaChallengePageState extends State<LoginMfaChallengePage> {
     }
   }
 
+  // Atualiza o fator selecionado e reinicia o fluxo de envio do SMS.
+  void _handleHintSelected(int index) {
+    setState(() {
+      _selectedHintIndex = index;
+    });
+    _sendSmsCode();
+  }
+
+  // Monta a tela usando o widget de conteudo extraido para a interface.
   @override
   Widget build(BuildContext context) {
-    final isBusy = _isSendingCode || _isConfirming;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5F5),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              LoginMfaHeader(email: widget.email),
-              const SizedBox(height: 24),
-              const LoginMfaIntroCard(),
-              if (_selectedPhoneNumber != null) ...[
-                const SizedBox(height: 16),
-                LoginMfaDestinationCard(phoneNumber: _selectedPhoneNumber!),
-              ],
-              const SizedBox(height: 20),
-              LoginMfaHintList(
-                hints: _phoneHints,
-                selectedIndex: _selectedHintIndex,
-                onHintSelected: (index) {
-                  setState(() {
-                    _selectedHintIndex = index;
-                  });
-                  _sendSmsCode();
-                },
-              ),
-              if (_verificationId != null) ...[
-                const SizedBox(height: 24),
-                LoginMfaInputField(
-                  icon: Icons.message_outlined,
-                  hintText: 'Código SMS',
-                  controller: _smsCodeController,
-                  enabled: !isBusy,
-                  inputBorder: const Color(0xFFE0E0E0),
-                  textGrey: const Color(0xFF8B9297),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-                LoginMfaPrimaryButton(
-                  label: 'Confirmar código e entrar',
-                  onPressed: isBusy ? null : _confirmSmsCode,
-                  isLoading: _isConfirming,
-                ),
-              ],
-              if (_isSendingCode && _verificationId == null) ...[
-                const SizedBox(height: 24),
-                const Center(child: CircularProgressIndicator()),
-              ],
-              if (_message != null) ...[
-                const SizedBox(height: 16),
-                LoginMfaMessage(message: _message!),
-              ],
-            ],
+          child: LoginMfaChallengeContent(
+            email: widget.email,
+            model: _model,
+            isSendingCode: _isSendingCode,
+            isConfirming: _isConfirming,
+            verificationId: _verificationId,
+            message: _message,
+            smsCodeController: _smsCodeController,
+            onHintSelected: _handleHintSelected,
+            onConfirmPressed: _confirmSmsCode,
           ),
         ),
       ),

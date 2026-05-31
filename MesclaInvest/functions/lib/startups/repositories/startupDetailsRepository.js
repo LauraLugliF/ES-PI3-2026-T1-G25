@@ -5,6 +5,7 @@ exports.getStartupById = getStartupById;
 exports.userIsInvestor = userIsInvestor;
 exports.listPublicQuestions = listPublicQuestions;
 exports.listPrivateQuestions = listPrivateQuestions;
+exports.listPriceHistory = listPriceHistory;
 exports.createQuestion = createQuestion;
 const firebase_1 = require("../shared/firebase");
 const portfolioRepository_1 = require("../../exchange/repositories/portfolioRepository");
@@ -12,7 +13,6 @@ const portfolioRepository_1 = require("../../exchange/repositories/portfolioRepo
 const startupsCollection = firebase_1.db.collection("startups");
 // Converte documento completo em versão resumida para listagem
 function toListItem(id, startup) {
-    var _a;
     // Retorna apenas os campos necessários para a tela de catálogo
     return {
         id,
@@ -24,7 +24,6 @@ function toListItem(id, startup) {
         currentTokenPriceCents: startup.currentTokenPriceCents,
         coverImageUrl: startup.coverImageUrl,
         tags: startup.tags,
-        priceHistory: (_a = startup.priceHistory) !== null && _a !== void 0 ? _a : undefined,
     };
 }
 // Retorna lista resumida de todas as startups para a tela de catálogo
@@ -102,6 +101,25 @@ async function listPrivateQuestions(startupId, uid) {
     })
         // Ordena pela mais recente primeiro
         .sort((left, right) => { var _a, _b; return String((_a = right.createdAt) !== null && _a !== void 0 ? _a : "").localeCompare(String((_b = left.createdAt) !== null && _b !== void 0 ? _b : "")); });
+}
+// Retorna o histórico de preço da startup ordenado do mais antigo para o mais recente.
+async function listPriceHistory(startupId) {
+    const historySnapshot = await startupsCollection
+        .doc(startupId)
+        .collection("priceHistory")
+        .orderBy("createdAt", "asc")
+        .limit(200)
+        .get();
+    return historySnapshot.docs.map((doc) => {
+        var _a, _b, _c, _d, _e, _f, _g, _h;
+        return ({
+            id: doc.id,
+            priceCents: Number((_a = doc.get("priceCents")) !== null && _a !== void 0 ? _a : 0),
+            changeType: ((_b = doc.get("changeType")) !== null && _b !== void 0 ? _b : "seed"),
+            quantity: Number((_c = doc.get("quantity")) !== null && _c !== void 0 ? _c : 0),
+            createdAt: (_h = (_g = (_f = (_e = (_d = doc.get("createdAt")) === null || _d === void 0 ? void 0 : _d.toDate) === null || _e === void 0 ? void 0 : _e.call(_d)) === null || _f === void 0 ? void 0 : _f.toISOString) === null || _g === void 0 ? void 0 : _g.call(_f)) !== null && _h !== void 0 ? _h : null,
+        });
+    });
 }
 // Salva uma nova pergunta na subcoleção de perguntas da startup
 async function createQuestion(startupId, question) {

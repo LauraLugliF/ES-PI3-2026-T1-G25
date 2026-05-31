@@ -6,7 +6,9 @@ import {db} from "../shared/firebase";
 const startupsCollection = db.collection("startups");
 
 // Percentual de impacto por token negociado sobre o preço atual.
-const tokenPriceImpactPercent = 0.02;
+const tokenPriceImpactPercent = 0.0005;
+// Fator que transforma a diferença entre o preço pago e o preço atual em impacto sobre a cotação.
+const tokenPricePaidImpactFactor = 0.1;
 
 // Dados de demonstração usados para popular o ambiente com registros iniciais.
 const demoStartups: Array<StartupDocument & { id: string }> = [
@@ -180,15 +182,35 @@ async function atualizarStartupAposNegociacao(
       (startup.totalTokensIssued ?? 0) + deltaTokens,
     );
     const precoAtualAtual = startup.currentTokenPriceCents ?? 0;
+
+    // Impacto por volume: quanto maior a quantidade negociada, maior a pressão sobre o preço.
     const priceDeltaCents = Math.max(
       1,
       Math.round(
         precoAtualAtual * tokenPriceImpactPercent * Math.abs(deltaTokens),
       ),
     );
+    const impactoVolumeCents = deltaTokens > 0 ? priceDeltaCents : -priceDeltaCents;
+
+    // Preço efetivamente pago por token na negociação atual.
+    const precoNegociadoCents = Math.round(
+      Math.abs(deltaCapitalCents) / Math.abs(deltaTokens),
+    );
+
+    // Impacto de percepção de valor: usa a diferença entre o preço pago e o preço atual.
+    const impactoPrecoCents = Math.round(
+      (precoNegociadoCents - precoAtualAtual) * tokenPricePaidImpactFactor,
+    );
+
+    const precoCalculado =
+      precoAtualAtual + impactoVolumeCents + impactoPrecoCents;
+
+    // Limites de volatilidade por transação: ±30% do preço atual.
+    const limiteSuperior = Math.max(1, Math.round(precoAtualAtual * 1.30));
+    const limiteInferior = Math.max(1, Math.round(precoAtualAtual * 0.70));
     const precoAtualizado = Math.max(
       1,
-      precoAtualAtual + (deltaTokens > 0 ? priceDeltaCents : -priceDeltaCents),
+      Math.min(Math.max(precoCalculado, limiteInferior), limiteSuperior),
     );
 
     transaction.update(startupRef, {

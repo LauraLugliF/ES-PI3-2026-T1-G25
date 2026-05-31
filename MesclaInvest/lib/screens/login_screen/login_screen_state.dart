@@ -1,6 +1,7 @@
 // Max Thomazini Barbosa RA:25003934
 
 // Indica que este state pertence ao arquivo login_screen.dart.
+// Esta tela dispara o fluxo de MFA quando o login precisa de segundo fator.
 part of 'login_screen.dart';
 
 // Controla os dados e a lógica da tela de login.
@@ -11,7 +12,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   // Guarda a mensagem exibida após tentar entrar.
   String? _loginMessage;
+    // Sinaliza quando o login esta em andamento.
   bool _isSubmitting = false;
+    // Reutiliza o servico de login que valida e-mail verificado e MFA.
   final LoginMfaService _loginService = LoginMfaService();
 
   // Diz se o botão pode ser usado.
@@ -63,6 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  // Traduz os codigos de erro do Firebase em mensagens mais claras.
   String _mapAuthError(FirebaseAuthException e) {
     if (e.code == 'user-not-found') {
       return 'Nenhum usuário encontrado para este e-mail.';
@@ -78,6 +82,8 @@ class _LoginScreenState extends State<LoginScreen> {
       return 'Falha de conexão. Verifique a internet e tente novamente.';
     } else if (e.code == 'no-app') {
       return 'Firebase não configurado neste app.';
+    } else if (e.code == 'email-not-verified') {
+      return 'Verifique seu e-mail antes de entrar. Abra a caixa de entrada e clique no link de confirmação.';
     }
 
     return e.message ?? 'Erro ao fazer login.';

@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
-// para rodar o teste, basta:
+// Para rodar os testes com emuladores locais:
 // flutter test --dart-define=RUN_FIREBASE_FUNCTIONS_TESTS=true
-const _runCallableTests = bool.fromEnvironment(
+const _runFunctionTests = bool.fromEnvironment(
   'RUN_FIREBASE_FUNCTIONS_TESTS',
 );
 
@@ -13,65 +13,53 @@ const _projectId = String.fromEnvironment(
   defaultValue: 'pi3-time25',
 );
 
-// Emulador de Functions Local
 const _functionsOrigin = String.fromEnvironment(
   'FIREBASE_FUNCTIONS_ORIGIN',
   defaultValue: 'http://127.0.0.1:5001',
 );
 
-// Emulador de Auth local
 const _authOrigin = String.fromEnvironment(
   'FIREBASE_AUTH_ORIGIN',
   defaultValue: 'http://127.0.0.1:9099',
 );
 
-// Usuário de teste
-const _testAuthEmail = 'test@gmailc';
+const _testAuthEmail = 'test-getstartup@example.com';
 const _testAuthPassword = 'Teste123';
 
 void main() {
-  group(
-    'Firebase callable functions de startups',
-    () {
-      setUpAll(() async {
-        // Cria/Autentica o usuário para ter o token disponível, 
-        // caso sua function seed exija no futuro (atualmente roda livre no emulador).
-        await _createAuthUserForTests();
-      });
+  group('getStartupDetails callable function', () {
+    late String idToken;
 
-      test('seedStartupCatalog popula startups demonstrativas', () async {
-        final result = await _callFunction('seedStartupCatalog');
-        final data = result['data'] as Map<String, dynamic>;
+    setUpAll(() async {
+      idToken = await _createAuthUserForTests();
+      final seedResp = await _callFunctionRaw('seedStartupCatalog', idToken: idToken);
+      if (seedResp.statusCode != 200) {
+        fail('Falha ao popular startups: ${seedResp.statusCode} ${seedResp.body}');
+      }
+    });
 
-        expect(data['count'], 3);
-        expect(data['ids'], contains('biochip-campus'));
-        expect(data['ids'], contains('rota-verde'));
-        expect(data['ids'], contains('mentorai'));
-      });
-    },
-    skip: !_runCallableTests ? _callableTestsSkipMessage : null,
-  );
+    test('retorna dados de detalhes da startup', () async {
+      final result = await _callFunction('getStartupDetails', data: {'id': 'biochip-campus'}, idToken: idToken);
+
+      expect(result['data'], isA<Map<String, dynamic>>());
+      expect(result['data']['id'], 'biochip-campus');
+      expect(result['data']['name'], isNotEmpty);
+    });
+  }, skip: !_runFunctionTests ? _skipMessage : null);
 }
 
-const _callableTestsSkipMessage =
-    'Inicie os emuladores e rode com --dart-define=RUN_FIREBASE_FUNCTIONS_TESTS=true.';
+const _skipMessage = 'Rode com emuladores e --dart-define=RUN_FIREBASE_FUNCTIONS_TESTS=true.';
 
 Uri _functionUri(String functionName) {
-  return Uri.parse(
-    '$_functionsOrigin/$_projectId/us-central1/$functionName',
-  );
+  return Uri.parse('$_functionsOrigin/$_projectId/us-central1/$functionName');
 }
 
 Uri _authSignUpUri() {
-  return Uri.parse(
-    '$_authOrigin/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key',
-  );
+  return Uri.parse('$_authOrigin/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key');
 }
 
 Uri _authSignInUri() {
-  return Uri.parse(
-    '$_authOrigin/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-api-key',
-  );
+  return Uri.parse('$_authOrigin/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-api-key');
 }
 
 Future<String> _createAuthUserForTests() async {
@@ -156,6 +144,19 @@ Future<Map<String, dynamic>> _callFunction(
   }
 
   return payload['result'] as Map<String, dynamic>;
+}
+
+Future<http.Response> _callFunctionRaw(String functionName, {String? idToken}) {
+  final headers = <String, String>{'Content-Type': 'application/json'};
+  if (idToken != null) {
+    headers['Authorization'] = 'Bearer $idToken';
+  }
+
+  return http.post(
+    _functionUri(functionName),
+    headers: headers,
+    body: jsonEncode({'data': {}}),
+  );
 }
 
 Map<String, dynamic> _decodeResponse(http.Response response) {

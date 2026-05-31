@@ -1,11 +1,21 @@
 //Max Thomazini Barbosa RA:25003934
+// Encapsula o acesso direto ao Firebase Auth para login e MFA por SMS.
 import 'package:firebase_auth/firebase_auth.dart';
 
+// Executa as chamadas de baixo nivel ao Firebase usadas pelo fluxo de login.
 class LoginMfaRepository {
+  // Permite injetar uma instancia diferente de FirebaseAuth quando necessario.
   LoginMfaRepository({FirebaseAuth? auth}) : _auth = auth ?? FirebaseAuth.instance;
 
+  // Instancia do Firebase Auth usada pelo repositorio.
   final FirebaseAuth _auth;
 
+  // Executa logout quando o fluxo de autenticacao precisa ser interrompido.
+  Future<void> signOut() {
+    return _auth.signOut();
+  }
+
+  // Faz login tradicional com e-mail e senha.
   Future<UserCredential> signInWithEmailAndPassword({
     required String email,
     required String password,
@@ -16,6 +26,7 @@ class LoginMfaRepository {
     );
   }
 
+  // Solicita o envio do SMS do segundo fator usando a sessao MFA atual.
   Future<void> requestSmsCode({
     required MultiFactorResolver resolver,
     required PhoneMultiFactorInfo hint,
@@ -40,6 +51,7 @@ class LoginMfaRepository {
     );
   }
 
+  // Resolve o desafio de MFA trocando a credencial do telefone pela assinatura aceita pelo Firebase.
   Future<UserCredential> resolveSignInWithCredential({
     required MultiFactorResolver resolver,
     required PhoneAuthCredential phoneCredential,

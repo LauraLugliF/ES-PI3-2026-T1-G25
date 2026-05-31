@@ -42,6 +42,7 @@ const userRepository_1 = require("../repositories/userRepository");
 const startupRepository_1 = require("../repositories/startupRepository");
 const portfolioRepository_1 = require("../repositories/portfolioRepository");
 const transactionRepository_1 = require("../repositories/transactionRepository");
+const startupRepository_2 = require("../../startups/repositories/startupRepository");
 exports.sellTokensHandler = (0, https_1.onRequest)({ region: "southamerica-east1", invoker: "public" }, async (request, response) => {
     var _a, _b, _c, _d;
     try {
@@ -79,18 +80,20 @@ exports.sellTokensHandler = (0, https_1.onRequest)({ region: "southamerica-east1
             response.status(400).send(`Você possui apenas ${portfolio.quantidade} tokens, mas está tentando vender ${quantidade}`);
             return;
         }
-        // Calcular o valor total
-        const precoTotal = Math.floor(quantidade * precoUnitario);
+        // Calcular o valor total em centavos para saldo e capital da startup.
+        const precoTotalCents = Math.floor(quantidade * precoUnitario * 100);
         // Remover tokens do portfólio
         const novoPortfolio = await (0, portfolioRepository_1.removerTokensDoPortfolio)(userId, startupId, quantidade);
+        const startupAtualizada = await (0, startupRepository_2.atualizarStartupAposVenda)(startupId, quantidade, precoTotalCents);
         // Adicionar saldo ao usuário
-        await (0, userRepository_1.adicionarDeposito)(userId, precoTotal);
+        await (0, userRepository_1.adicionarDeposito)(userId, precoTotalCents);
         // Registrar a transação
         const transacao = await (0, transactionRepository_1.criarTransacao)("venda", userId, startupId, quantidade, precoUnitario);
         response.status(200).send({
             sucesso: true,
             mensagem: "Venda realizada com sucesso",
             portfolio: novoPortfolio,
+            startup: startupAtualizada,
             transacao,
         });
     }

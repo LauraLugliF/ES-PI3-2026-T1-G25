@@ -1,14 +1,19 @@
 //Max Thomazini Barbosa RA:25003934
+// Centraliza as regras de negocio do login com validação de e-mail e MFA.
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../repositories/login_mfa_repository.dart';
 
+// Faz a ponte entre a tela e o acesso direto ao Firebase Auth.
 class LoginMfaService {
+  // Permite injetar um repositório alternativo em testes ou cenários específicos.
   LoginMfaService({LoginMfaRepository? repository})
       : _repository = repository ?? LoginMfaRepository();
 
+  // Repositório responsável pela interação com o Firebase.
   final LoginMfaRepository _repository;
 
+  // Faz login com e-mail e senha e bloqueia o acesso se o e-mail ainda nao estiver verificado.
   Future<UserCredential> signInWithEmailAndPassword({
     required String email,
     required String password,
@@ -40,6 +45,7 @@ class LoginMfaService {
     return credential;
   }
 
+  // Dispara o envio do SMS para o fator selecionado no desafio MFA.
   Future<void> sendSmsCode({
     required MultiFactorResolver resolver,
     required PhoneMultiFactorInfo hint,
@@ -58,6 +64,7 @@ class LoginMfaService {
     );
   }
 
+  // Conclui o desafio MFA usando a credencial do telefone informada.
   Future<UserCredential> resolveSignInWithCredential({
     required MultiFactorResolver resolver,
     required PhoneAuthCredential phoneCredential,

@@ -1,5 +1,7 @@
 //Max Thomazini Barbosa RA:25003934
+// Representa os dados consolidados exibidos no perfil do usuario.
 class ProfileData {
+  // Recebe os campos prontos para a interface.
   const ProfileData({
     required this.name,
     required this.email,

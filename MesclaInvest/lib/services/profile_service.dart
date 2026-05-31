@@ -1,13 +1,14 @@
 //Max Thomazini Barbosa RA:25003934
+// Centraliza a leitura dos dados exibidos na tela de perfil.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import '../models/profile_data_model.dart';
-import '../models/profile_mfa_status_model.dart';
-import '../repositories/profile_mfa_repository.dart';
 
+// Consulta Firebase Auth e Firestore para montar os dados do perfil.
 class ProfileService {
+  // Permite injetar dependencias em testes.
   ProfileService({FirebaseAuth? auth, FirebaseFirestore? firestore})
       : _auth = auth ?? FirebaseAuth.instance,
         _firestore = firestore ?? FirebaseFirestore.instanceFor(
@@ -18,6 +19,7 @@ class ProfileService {
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
 
+  // Carrega os dados do usuario combinando Auth e documento do Firestore.
   Future<ProfileData> loadProfileData() async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -78,6 +80,7 @@ class ProfileService {
     );
   }
 
+  // Retorna o primeiro texto nao vazio de uma lista de candidatos.
   String _firstNonEmptyString(List<Object?> values) {
     for (final value in values) {
       final text = value?.toString().trim() ?? '';
@@ -89,6 +92,7 @@ class ProfileService {
     return '';
   }
 
+  // Converte valores do Firestore para DateTime quando possivel.
   DateTime? _toDateTime(Object? value) {
     if (value is Timestamp) {
       return value.toDate();
@@ -99,16 +103,5 @@ class ProfileService {
     }
 
     return null;
-  }
-}
-
-class ProfileMfaService {
-  ProfileMfaService({ProfileMfaRepository? repository})
-      : _repository = repository ?? ProfileMfaRepository();
-
-  final ProfileMfaRepository _repository;
-
-  Future<ProfileMfaStatus> loadStatus() async {
-    return _repository.fetchStatus();
   }
 }

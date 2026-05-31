@@ -1,16 +1,27 @@
 //Max Thomazini Barbosa RA:25003934
+// Concentra a orquestracao da tela de perfil e das acoes de seguranca.
 part of 'profile_screen.dart';
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  // Controla o carregamento do fluxo de ativacao de MFA.
   bool _isMfaLoading = false;
+  // Reflete se o usuario ja possui MFA por SMS ativado.
   bool _isMfaEnabled = false;
+  // Controla a consulta do status de MFA ao backend.
   bool _isMfaStatusLoading = true;
+  // Bloqueia a UI enquanto o logout esta em andamento.
   bool _isSigningOut = false;
+  // Mensagem exibida no card de seguranca quando necessario.
   String? _mfaMessage;
+  // Evita recarregamentos redundantes ao voltar para a rota.
   bool _wasCurrentRoute = false;
+  // Carrega os dados do perfil uma unica vez por instancia da tela.
   late final Future<ProfileData> _profileFuture;
+  // Consulta os dados consolidados do perfil.
   final ProfileService _profileService = ProfileService();
+  // Consulta o estado atual do MFA.
   final ProfileMfaService _mfaService = ProfileMfaService();
+  // Realiza a saida da conta do usuario.
   final LogoutService _logoutService = LogoutService();
 
   @override
@@ -24,6 +35,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return _profileService.loadProfileData();
   }
 
+  // Bloqueia a navegacao quando o fluxo de MFA esta em andamento.
   void _onNavTap(int index) {
     // Evita navegar durante o fluxo de MFA para não desmontar a tela no meio
     // de callbacks/dialgos assincronos.
@@ -33,6 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     handleBottomNavTap(context, currentIndex: 3, tappedIndex: index);
   }
 
+  // Abre a tela de ativacao de MFA e atualiza o estado apos o retorno.
   Future<void> _start2FAFlow() async {
     if (_isMfaLoading || _isMfaEnabled) return;
 
@@ -58,6 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await _loadMfaStatus();
   }
 
+  // Realiza o logout e limpa a pilha de navegacao ao concluir com sucesso.
   Future<void> _signOut() async {
     if (_isSigningOut) return;
 
@@ -83,6 +97,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // Consulta o backend para refletir o estado atual do MFA na interface.
   Future<void> _loadMfaStatus() async {
     if (mounted) {
       setState(() {
@@ -112,11 +127,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  // Libera o ciclo do state quando a tela for descartada.
   @override
   void dispose() {
     super.dispose();
   }
 
+  // Monta a tela e atualiza o status de MFA ao entrar na rota.
   @override
   Widget build(BuildContext context) {
     _refreshMfaOnRouteEnter(context);
@@ -196,6 +213,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // Recarrega o status de MFA quando a rota volta a ser visivel.
   void _refreshMfaOnRouteEnter(BuildContext context) {
     final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
 

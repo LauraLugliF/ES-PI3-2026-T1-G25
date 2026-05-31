@@ -1,16 +1,16 @@
 import {addUser} from "./users/index";
 import {setGlobalOptions} from "firebase-functions";
 
-// Limita o número de instâncias para evitar excesso de concorrência nas functions.
+// Configuração global do runtime das Functions para manter o consumo de recursos controlado.
 setGlobalOptions({maxInstances: 10});
 
-// Expõe a function de cadastro no ponto de entrada principal.
+// Expõe as funções do módulo de usuários diretamente no ponto de entrada principal.
 export {addUser};
 export {getUserPhoneNumber} from "./users/index";
 
-// Reexporta todas as functions relacionadas ao módulo de startups.
+// Reexporta o módulo de startups como parte do bundle principal das Functions.
 export * from "./startups";
 
-// Reexporta todas as functions relacionadas ao módulo de exchange.
+// Reexporta o módulo de exchange, que inclui o fluxo de depósito, compra e venda.
 export * from "./exchange";
 

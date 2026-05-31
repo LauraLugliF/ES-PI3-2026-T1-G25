@@ -1,6 +1,8 @@
 //Max Thomazini Barbosa RA:25003934
+// Reune os widgets compartilhados pela tela de ativacao de MFA.
 import 'package:flutter/material.dart';
 
+// Exibe o cabecalho com o titulo e a acao de voltar.
 class MfaEnrollHeader extends StatelessWidget {
   const MfaEnrollHeader({super.key});
 
@@ -37,6 +39,7 @@ class MfaEnrollHeader extends StatelessWidget {
   }
 }
 
+// Explica o proposito da tela e o que o usuario deve fazer.
 class MfaIntroCard extends StatelessWidget {
   const MfaIntroCard({super.key});
 
@@ -90,6 +93,7 @@ class MfaIntroCard extends StatelessWidget {
   }
 }
 
+// Mostra o passo a passo do fluxo de cadastro do segundo fator.
 class MfaStepsCard extends StatelessWidget {
   const MfaStepsCard({super.key});
 
@@ -114,7 +118,9 @@ class MfaStepsCard extends StatelessWidget {
   }
 }
 
+// Campo padronizado para telefone, senha e codigo SMS.
 class MfaInputField extends StatelessWidget {
+  // Recebe a configuracao visual e o controlador do texto.
   const MfaInputField({
     super.key,
     required this.icon,
@@ -161,7 +167,9 @@ class MfaInputField extends StatelessWidget {
   }
 }
 
+// Botao principal utilizado nas etapas de envio e confirmacao.
 class MfaPrimaryButton extends StatelessWidget {
+  // Define rotulo, callback e estado de carregamento.
   const MfaPrimaryButton({
     super.key,
     required this.label,
@@ -204,7 +212,9 @@ class MfaPrimaryButton extends StatelessWidget {
   }
 }
 
+// Exibe mensagens de erro ou sucesso geradas pelo fluxo.
 class MfaMessageText extends StatelessWidget {
+  // Recebe o texto que sera mostrado ao usuario.
   const MfaMessageText({super.key, required this.message});
 
   final String message;
@@ -222,7 +232,9 @@ class MfaMessageText extends StatelessWidget {
   }
 }
 
+// Linha numerada usada para compor o bloco de passos.
 class _MfaStepRow extends StatelessWidget {
+  // Recebe o numero do passo e o texto correspondente.
   const _MfaStepRow({required this.number, required this.text});
 
   final int number;

@@ -1,17 +1,27 @@
 //Max Thomazini Barbosa RA:25003934
+// Concentra a orquestracao do fluxo de ativacao do MFA por SMS.
 part of 'mfa_enroll_page.dart';
 
 class _MfaEnrollPageState extends State<MfaEnrollPage> {
+  // Controla os valores digitados pelo usuario para telefone, senha e codigo.
   final _phoneController = TextEditingController();
+  // Armazena a senha atual usada na reautenticacao.
   final _passwordController = TextEditingController();
+  // Recebe o codigo SMS informado para concluir a ativacao.
   final _smsCodeController = TextEditingController();
+  // Encapsula as regras de negocio do cadastro de MFA.
   final MfaEnrollService _service = MfaEnrollService();
 
+  // Evita disparar mais de um envio de SMS ao mesmo tempo.
   bool _isSendingCode = false;
+  // Evita confirmar o codigo enquanto outro passo ainda esta ativo.
   bool _isEnrolling = false;
+  // Id de verificacao retornado pelo Firebase para validar o SMS.
   String? _verificationId;
+  // Mensagem exibida na interface para sucesso ou erro.
   String? _message;
 
+  // Libera os controladores quando a tela sai da arvore.
   @override
   void dispose() {
     _phoneController.dispose();
@@ -20,6 +30,7 @@ class _MfaEnrollPageState extends State<MfaEnrollPage> {
     super.dispose();
   }
 
+  // Reautentica o usuario e solicita o envio do SMS de ativacao.
   Future<void> _sendSmsCode() async {
     if (_isSendingCode || _isEnrolling) return;
 
@@ -57,31 +68,12 @@ class _MfaEnrollPageState extends State<MfaEnrollPage> {
             });
           }
         },
-        onVerificationCompleted: (phoneCredential) async {
-          try {
-            final user = FirebaseAuth.instance.currentUser;
-            if (user == null) {
-              if (!mounted) return;
-              setState(() {
-                _message = 'Usuario nao autenticado. Faca login novamente.';
-              });
-              return;
-            }
-
-            await user.multiFactor.enroll(
-              PhoneMultiFactorGenerator.getAssertion(phoneCredential),
-            );
-            if (!mounted) return;
-            setState(() {
-              _message = 'Autenticacao por SMS ativada com sucesso.';
-            });
-            Navigator.of(context).pop(true);
-          } on FirebaseAuthException catch (e) {
-            if (!mounted) return;
-            setState(() {
-              _message = e.message ?? 'Falha ao ativar MFA automaticamente.';
-            });
-          }
+        onEnrollmentComplete: () {
+          if (!mounted) return;
+          setState(() {
+            _message = 'Autenticacao por SMS ativada com sucesso.';
+          });
+          Navigator.of(context).pop(true);
         },
         onError: (message) {
           if (!mounted) return;
@@ -109,6 +101,7 @@ class _MfaEnrollPageState extends State<MfaEnrollPage> {
     }
   }
 
+  // Finaliza a ativacao do MFA usando o codigo recebido por SMS.
   Future<void> _confirmSmsCode() async {
     if (_isEnrolling || _isSendingCode) return;
 
@@ -164,6 +157,7 @@ class _MfaEnrollPageState extends State<MfaEnrollPage> {
     }
   }
 
+  // Monta a tela com o formulario, os passos e os estados de carregamento.
   @override
   Widget build(BuildContext context) {
     final isBusy = _isSendingCode || _isEnrolling;

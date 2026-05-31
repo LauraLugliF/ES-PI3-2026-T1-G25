@@ -1,13 +1,18 @@
 //Max Thomazini Barbosa RA:25003934
+// Encapsula a consulta direta ao Firebase Auth para descobrir fatores MFA.
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/profile_mfa_status_model.dart';
 
+// Busca o status real do MFA do usuario autenticado.
 class ProfileMfaRepository {
+  // Permite injetar uma instancia customizada de FirebaseAuth em testes.
   ProfileMfaRepository({FirebaseAuth? auth}) : _auth = auth ?? FirebaseAuth.instance;
 
+  // Instancia do Firebase Auth usada nesta consulta.
   final FirebaseAuth _auth;
 
+  // Lê os fatores MFA do usuario e resume o resultado para a interface.
   Future<ProfileMfaStatus> fetchStatus() async {
     final user = _auth.currentUser;
     if (user == null) {

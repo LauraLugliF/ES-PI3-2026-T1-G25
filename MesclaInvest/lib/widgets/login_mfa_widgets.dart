@@ -1,9 +1,12 @@
 //Max Thomazini Barbosa RA:25003934
+// Reúne widgets reutilizaveis usados pelas telas de MFA.
 import 'package:flutter/material.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 
+// Exibe o cabecalho da tela com contexto do desafio MFA.
 class LoginMfaHeader extends StatelessWidget {
+  // Recebe o e-mail mostrado como referencia para o usuario.
   const LoginMfaHeader({super.key, required this.email});
 
   final String email;
@@ -41,6 +44,7 @@ class LoginMfaHeader extends StatelessWidget {
   }
 }
 
+// Mostra o texto introdutorio sobre o uso do segundo fator por SMS.
 class LoginMfaIntroCard extends StatelessWidget {
   const LoginMfaIntroCard({super.key});
 
@@ -73,7 +77,9 @@ class LoginMfaIntroCard extends StatelessWidget {
   }
 }
 
+// Destaca para qual numero o SMS foi enviado na etapa atual.
 class LoginMfaDestinationCard extends StatelessWidget {
+  // Recebe o telefone selecionado ou cadastrado para exibicao.
   const LoginMfaDestinationCard({super.key, required this.phoneNumber});
 
   final String phoneNumber;
@@ -102,7 +108,9 @@ class LoginMfaDestinationCard extends StatelessWidget {
   }
 }
 
+// Lista os fatores por telefone quando a conta possui mais de uma opcao.
 class LoginMfaHintList extends StatelessWidget {
+  // Recebe a lista de fatores e o callback para alterar a selecao.
   const LoginMfaHintList({
     super.key,
     required this.hints,
@@ -177,7 +185,9 @@ class LoginMfaHintList extends StatelessWidget {
   }
 }
 
+// Campo padronizado para entrada do codigo SMS.
 class LoginMfaInputField extends StatelessWidget {
+  // Recebe configuracao visual e o controlador do texto.
   const LoginMfaInputField({
     super.key,
     required this.icon,
@@ -224,7 +234,9 @@ class LoginMfaInputField extends StatelessWidget {
   }
 }
 
+// Botao principal reutilizado para as acoes de envio e confirmacao.
 class LoginMfaPrimaryButton extends StatelessWidget {
+  // Define rotulo, callback e estado de carregamento do botao.
   const LoginMfaPrimaryButton({
     super.key,
     required this.label,
@@ -267,7 +279,9 @@ class LoginMfaPrimaryButton extends StatelessWidget {
   }
 }
 
+// Exibe mensagens de erro ou sucesso retornadas pelo fluxo.
 class LoginMfaMessage extends StatelessWidget {
+  // Recebe a mensagem que sera exibida abaixo do formulario.
   const LoginMfaMessage({super.key, required this.message});
 
   final String message;

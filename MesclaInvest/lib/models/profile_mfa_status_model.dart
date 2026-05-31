@@ -1,5 +1,7 @@
 //Max Thomazini Barbosa RA:25003934
+// Representa o status consolidado do MFA usado no card de seguranca.
 class ProfileMfaStatus {
+  // Recebe o resumo da consulta de fatores do Firebase Auth.
   const ProfileMfaStatus({
     required this.isPhoneMfaEnabled,
     required this.factorIds,

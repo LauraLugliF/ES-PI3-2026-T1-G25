@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart'; // Importado para permitir abri
 
 // Importa os widgets reutilizáveis da tela de detalhes
 import '../../widgets/startups_detalhadas_widgets.dart';
+import '../../widgets/app_bottom_navigation.dart';
 
 // Importa o repository que chama as Cloud Functions.
 import '../../repositories/startup_repository.dart';

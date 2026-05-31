@@ -11,9 +11,6 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
   // Repositório responsável por chamar as Cloud Functions de startups.
   final _repository = StartupRepository();
 
-  // Índice do item ativo no menu inferior — 1 = Explorar.
-  int _navIndex = 1;
-
   // Guarda os dados da startup carregados de forma assíncrona.
   late Future<Map<String, dynamic>> _startupFuture;
 
@@ -105,32 +102,6 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
           backgroundColor: Colors.red,
         ),
       );
-    }
-  }
-
-  // Callback de navegação do BottomNavigationBar. Redireciona o usuário para as telas correspondentes.
-  void _onNavTap(int index) {
-    // Evita recarregar a mesma tela se ele já estiver na aba atual
-    if (index == _navIndex) return;
-
-    // Navega para a rota configurada com substituição de tela (pushReplacementNamed)
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, '/explore');
-        break;
-      case 1:
-        Navigator.pushReplacementNamed(context, '/explore');
-        break;
-      case 2:
-        Navigator.pushReplacementNamed(context, '/wallet');
-        break;
-      case 3:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Rota de Perfil não implementada'),
-          ),
-        );
-        break;
     }
   }
 
@@ -383,36 +354,13 @@ class _StartupDetailScreenState extends State<StartupDetailScreen> {
           );
         },
       ),
-
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.white,
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _navIndex,
-        onTap: _onNavTap,
-        selectedItemColor: kDetailPrimaryColor,
-        unselectedItemColor: const Color(0xFFAAAAAA),
-        selectedLabelStyle:
-        const TextStyle(fontWeight: FontWeight.w500),
-        unselectedLabelStyle:
-        const TextStyle(fontWeight: FontWeight.w500),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Início',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Explorar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.wallet_outlined),
-            label: 'Carteira',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Perfil',
-          ),
-        ],
+      bottomNavigationBar: AppBottomNavigation(
+        currentIndex: 1,
+        onTap: (index) => handleBottomNavTap(
+          context,
+          currentIndex: 1,
+          tappedIndex: index,
+        ),
       ),
     );
   }

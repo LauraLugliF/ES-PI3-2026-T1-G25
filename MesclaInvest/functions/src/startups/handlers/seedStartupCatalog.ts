@@ -1,3 +1,5 @@
+// Max Thomazini Barbosa RA:25003934
+
 import {HttpsError, onCall} from "firebase-functions/https";
 import {seedDemoStartups} from "../repositories/startupRepository";
 import {normalizeString} from "../shared/validation";
